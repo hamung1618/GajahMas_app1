@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004aad">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gajah Mas">
+<link rel="apple-touch-icon" href="https://img.icons8.com/color/192/000000/briefcase.png">
+
 <style>
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
@@ -188,6 +196,15 @@ tr:hover td{background:#f8f9fa}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+// DAFTARKAN SERVICE WORKER UNTUK SISTEM INSTALASI PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('PWA Service Worker terdaftar!', reg))
+      .catch(err => console.log('Gagal mendaftarkan Service Worker:', err));
+  });
+}
+
 async function masuk(){
   document.getElementById('landing').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -764,13 +781,14 @@ function parsePiutangExcelData(rawRows) {
   };
   
   let keyCustomer = findKey(['customer', 'debitur', 'nama', 'toko', 'pelanggan']);
-  let keyTanggal = findKey(['tanggal', 'tglfaktur', 'tgl']);
-  let keyJatuhTempo = findKey(['jatuhtempo', 'tempo', 'duedate']);
-  let keyInvoice = findKey(['faktur', 'invoice', 'nota', 'nofaktur', 'noinv']);
+  let keyTanggal = findKey(['tanggal', 'tglfaktur', 'tgl', 'tgltrans']);
+  let keyJatuhTempo = findKey(['jatuhtempo', 'tempo', 'duedate', 'tgltempo']);
+  let keyInvoice = findKey(['faktur', 'invoice', 'nota', 'nofaktur', 'noinv', 'notafaktur']);
   let keyNominal = findKey(['nominal', 'piutang', 'jumlah', 'total', 'nilaipiutang', 'debet']);
   let keyTerbayar = findKey(['terbayar', 'bayar', 'sudahbayar', 'kredit']);
   let keySisa = findKey(['sisa', 'sisapiutang', 'sisatagihan', 'saldo']);
   let keyStatus = findKey(['status', 'keterangan']);
+  let keyOverdue = findKey(['overd', 'overdue', 'usia', 'hari', 'days', 'usiapiutang']); // Mendeteksi kolom overD
   
   return rawRows.map(row => {
     let rawNominal = keyNominal ? String(row[keyNominal] || '') : '0';
@@ -789,35 +807,44 @@ function parsePiutangExcelData(rawRows) {
     let tanggal = keyTanggal ? String(row[keyTanggal] || '').trim() : '-';
     let jatuhTempo = keyJatuhTempo ? String(row[keyJatuhTempo] || '').trim() : '-';
     let invoice = keyInvoice ? String(row[keyInvoice] || '').trim() : '-';
+    let overD = keyOverdue ? String(row[keyOverdue] || '').trim() : '';
+    
+    // Konversi overD ke integer/angka murni
+    let overDNum = parseInt(overD.replace(/[^0-9\-]/g, '')) || 0;
+    
+    // Algoritma Cadangan: Hitung overD otomatis berdasarkan tanggal 2026 jika datanya kosong
+    if (!overD && jatuhTempo !== '-' && sisa > 0) {
+      try {
+        let today = new Date(2026, 5, 15); // Diset default pertengahan Juni 2026 sesuai tanggal transaksi
+        let parts = jatuhTempo.split(/[\/\-]/);
+        if (parts.length === 3) {
+          let due;
+          if (parts[2].length === 2) parts[2] = '20' + parts[2];
+          if (parts[0].length === 4) {
+            due = new Date(parts[0], parts[1]-1, parts[2]);
+          } else {
+            due = new Date(parts[2], parts[1]-1, parts[0]);
+          }
+          let diffTime = today - due;
+          let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays > 0) {
+            overDNum = diffDays;
+          }
+        }
+      } catch(e) {}
+    }
     
     let status = keyStatus ? String(row[keyStatus] || '').trim() : '';
     if (!status) {
       if (sisa <= 0) {
         status = 'Lunas';
+        overDNum = 0; // Jika lunas, overD otomatis jadi 0
       } else {
-        status = 'Belum Lunas';
-        if (jatuhTempo !== '-') {
-          try {
-            let today = new Date();
-            let parts = jatuhTempo.split(/[\/\-]/);
-            if (parts.length === 3) {
-              let due;
-              if (parts[2].length === 2) parts[2] = '20' + parts[2];
-              if (parts[0].length === 4) {
-                due = new Date(parts[0], parts[1]-1, parts[2]);
-              } else {
-                due = new Date(parts[2], parts[1]-1, parts[0]);
-              }
-              if (due < today) {
-                status = 'Jatuh Tempo';
-              }
-            }
-          } catch(e) {}
-        }
+        status = overDNum > 0 ? 'Jatuh Tempo' : 'Belum Lunas';
       }
     }
     
-    return { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, status };
+    return { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, overD: overDNum, status };
   });
 }
 
@@ -919,7 +946,8 @@ function renderPiutangTable() {
     return;
   }
   
-  let headers = ['Nama Customer', 'Tanggal', 'No. Faktur', 'Jatuh Tempo', 'Nominal', 'Terbayar', 'Sisa', 'Status', 'Aksi'];
+  // Menambahkan header "Overdue" sebelum Status
+  let headers = ['Nama Customer', 'Tanggal', 'No. Faktur', 'Jatuh Tempo', 'Nominal', 'Terbayar', 'Sisa', 'Overdue', 'Status', 'Aksi'];
   let html = '<table><thead><tr>';
   headers.forEach(h => html += '<th>' + h + '</th>');
   html += '</tr></thead><tbody>';
@@ -938,6 +966,7 @@ function renderPiutangTable() {
       html += `<td><input type="number" id="edit-piutang-${realIndex}-nominal" value="${row.nominal}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" oninput="updatePiutangSisaEdit(${realIndex})"></td>`;
       html += `<td><input type="number" id="edit-piutang-${realIndex}-terbayar" value="${row.terbayar}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" oninput="updatePiutangSisaEdit(${realIndex})"></td>`;
       html += `<td><input type="number" id="edit-piutang-${realIndex}-sisa" value="${row.sisa}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" readonly></td>`;
+      html += `<td><input type="number" id="edit-piutang-${realIndex}-overD" value="${row.overD || 0}" style="width:100%; min-width:60px; box-sizing:border-box; padding:4px; font-size:12px;"></td>`;
       html += `<td>
         <select id="edit-piutang-${realIndex}-status" style="width:100%; min-width:90px; box-sizing:border-box; padding:4px; font-size:12px;">
           <option value="Belum Lunas" ${row.status === 'Belum Lunas' ? 'selected' : ''}>Belum Lunas</option>
@@ -953,6 +982,14 @@ function renderPiutangTable() {
       html += `<td>Rp ${(parseInt(row.nominal) || 0).toLocaleString('id-ID')}</td>`;
       html += `<td>Rp ${(parseInt(row.terbayar) || 0).toLocaleString('id-ID')}</td>`;
       html += `<td style="color:${(parseInt(row.sisa) || 0) > 0 ? '#dc3545' : '#28a745'}; font-weight:bold;">Rp ${(parseInt(row.sisa) || 0).toLocaleString('id-ID')}</td>`;
+      
+      // Menampilkan kolom Overdue (Sisa hari)
+      let overDays = parseInt(row.overD) || 0;
+      if (overDays > 0 && row.status !== 'Lunas') {
+        html += `<td style="color:#dc3545; font-weight:bold;">${overDays} Hari</td>`;
+      } else {
+        html += `<td style="color:#999;">-</td>`;
+      }
       
       let statusColor = '#6c757d';
       if (row.status === 'Lunas') statusColor = '#28a745';
@@ -984,11 +1021,15 @@ function updatePiutangSisaEdit(idx) {
   document.getElementById(`edit-piutang-${idx}-sisa`).value = sisaVal;
   
   let statusSel = document.getElementById(`edit-piutang-${idx}-status`);
+  let overDInput = document.getElementById(`edit-piutang-${idx}-overD`);
+  
   if (sisaVal <= 0) {
     statusSel.value = 'Lunas';
+    if (overDInput) overDInput.value = 0;
   } else {
     if (statusSel.value === 'Lunas') {
-      statusSel.value = 'Belum Lunas';
+      let days = parseInt(overDInput ? overDInput.value : 0) || 0;
+      statusSel.value = days > 0 ? 'Jatuh Tempo' : 'Belum Lunas';
     }
   }
 }
@@ -1011,9 +1052,10 @@ function simpanRowPiutang(idx) {
   let nominal = parseInt(document.getElementById(`edit-piutang-${idx}-nominal`).value) || 0;
   let terbayar = parseInt(document.getElementById(`edit-piutang-${idx}-terbayar`).value) || 0;
   let sisa = nominal - terbayar;
+  let overD = parseInt(document.getElementById(`edit-piutang-${idx}-overD`).value) || 0;
   let status = document.getElementById(`edit-piutang-${idx}-status`).value;
   
-  dataPiutang[idx] = { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, status };
+  dataPiutang[idx] = { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, overD, status };
   localStorage.setItem('piutang_data', JSON.stringify(dataPiutang));
   
   editingRowPiutang = null;
