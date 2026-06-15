@@ -2,50 +2,55 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>CV Gajah Mas - Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Gajah Mas</title>
 <style>
-  body{margin:0;font-family:Arial,sans-serif;background:#f4f7f6;display:flex;height:100vh}
-  .sidebar{width:200px;background:#fff;border-right:1px solid #ddd;padding-top:20px}
-  .menu-item{padding:15px;cursor:pointer;border-bottom:1px solid #eee;font-size:14px}
-  .menu-item:hover{background:#eef}
-  .content{flex:1;padding:20px;overflow-y:auto}
-  .card{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);margin-bottom:20px}
-  table{width:100%;border-collapse:collapse;background:#fff}
-  th,td{padding:10px;border:1px solid #ddd;text-align:left}
-  th{background:#004aad;color:#fff}
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: #f4f7f6; }
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #ddd; padding-top: 10px; flex-shrink: 0; }
+  .menu-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; transition: 0.2s; }
+  .menu-item:hover { background: #eef; color: #004aad; }
+  .menu-item.active { background: #004aad; color: #fff; font-weight: 600; }
+  .content { flex: 1; padding: 25px; overflow-y: auto; }
+  .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
+  th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+  th { background: #004aad; color: #fff; }
 </style>
 </head>
 <body>
 
 <div class="sidebar">
-  <div class="menu-item" onclick="loadPage('ringkasan')">Ringkasan Penjualan</div>
-  <div class="menu-item" onclick="loadPage('datatable')">Data Penjualan</div>
-  <div class="menu-item" onclick="loadPage('hutang')">Hutang Dagang</div>
+  <div style="padding: 20px; font-weight: bold; color: #004aad; border-bottom: 2px solid #004aad;">GAJAH MAS</div>
+  <div class="menu-item" onclick="loadPage('ringkasan', this)">Ringkasan Penjualan</div>
+  <div class="menu-item" onclick="loadPage('datatable', this)">Data Penjualan</div>
+  <div class="menu-item" onclick="loadPage('hutang', this)">Hutang Dagang</div>
 </div>
 
 <div class="content" id="mainContent">
   <h3>Selamat Datang</h3>
-  <p>Pilih menu di samping untuk mulai.</p>
+  <p>Pilih menu di samping untuk melihat data Anda.</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const pages = {
-  ringkasan: "<h3>Ringkasan Penjualan</h3><p>Data penjualan bulan ini akan tampil di sini.</p>",
-  datatable: "<h3>Data Penjualan Lengkap</h3><p>Tabel data penjualan Anda.</p>",
-  hutang: `
-    <h3>Data Hutang Dagang</h3>
-    <div id="summary" style="display:flex; gap:10px;"></div>
-    <input type="file" id="fileIn" onchange="prosesHutang(event)" style="margin:20px 0;">
-    <div id="tableArea"></div>
-  `
-};
+function loadPage(id, el) {
+  // Update class active
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  el.classList.add('active');
 
-function loadPage(id) {
-  document.getElementById('mainContent').innerHTML = pages[id];
+  const container = document.getElementById('mainContent');
+  
   if(id === 'hutang') {
+    container.innerHTML = `
+      <h3>Data Hutang Dagang</h3>
+      <div id="summary" style="display:flex; gap:15px;"></div>
+      <input type="file" id="fileIn" onchange="prosesHutang(event)" style="margin:20px 0;">
+      <div id="tableArea"></div>
+    `;
     let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
     if(data.length > 0) renderHutang(data);
+  } else {
+    container.innerHTML = `<h3>${id.replace('_', ' ').toUpperCase()}</h3><p>Fitur ${id} akan segera dikembangkan.</p>`;
   }
 }
 
