@@ -29,6 +29,7 @@
   </div>
   <div class="content" id="mainContent">
     <h3>Selamat Datang</h3>
+    <p>Pilih menu di samping untuk melihat data Anda.</p>
   </div>
 </div>
 
@@ -36,22 +37,22 @@
 <script>
 // Fungsi konversi angka Excel ke tanggal JS
 function excelDateToJSDate(serial) {
-   let utc_days  = Math.floor(serial - 25569);
-   let utc_value = utc_days * 86400;                                        
-   let date_info = new Date(utc_value * 1000);
-   return date_info;
+   let utc_days = Math.floor(serial - 25569);
+   return new Date(utc_days * 86400 * 1000);
 }
 
 function loadPage(id, el) {
   document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
   el.classList.add('active');
   const container = document.getElementById('mainContent');
+  
   if(id === 'hutang') {
     container.innerHTML = `<h3>Data Hutang Dagang</h3><div id="summary" style="display:flex; gap:15px;"></div><input type="file" onchange="prosesHutang(event)" style="margin:20px 0;"><div id="tableArea"></div>`;
     let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
     if(data.length > 0) renderHutang(data);
   } else {
-    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Fitur dalam pengembangan.</p>`;
+    // Mempertahankan struktur asli untuk menu lainnya
+    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Fitur ${id} dalam tahap pengembangan.</p>`;
   }
 }
 
@@ -72,8 +73,8 @@ function renderHutang(data) {
   let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
   
   data.forEach(r => {
-    // Deteksi jika Tanggal adalah angka serial Excel (46175, dll)
     let d = typeof r['Tanggal'] === 'number' ? excelDateToJSDate(r['Tanggal']) : new Date(r['Tanggal']);
+    // Membersihkan format "Rp" dan titik ribuan agar jadi angka
     let nom = parseFloat(String(r['Nominal']).replace(/[^0-9.-]+/g,"")||0);
     let bay = parseFloat(String(r['Pembayaran']).replace(/[^0-9.-]+/g,"")||0);
     let sisa = nom - bay;
