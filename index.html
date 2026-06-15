@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Gajah Mas App - Supabase</title>
+<title>Gajah Mas App</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body{font-family:Arial;margin:0;background:#f5f5f5}
@@ -11,8 +11,8 @@ body{font-family:Arial;margin:0;background:#f5f5f5}
 .sidebar a:hover{background:#34495e}
 .sidebar a.active{background:#1abc9c}
 .content{margin-left:220px;padding:20px}
-.section{display:none}
-.section.active{display:block}
+section{display:none}
+section.active{display:block}
 table{width:100%;border-collapse:collapse;background:#fff}
 th,td{border:1px solid #ddd;padding:8px;text-align:left}
 th{background:#3498db;color:#fff}
@@ -24,79 +24,56 @@ button:hover{opacity:0.8}
 <body>
 
 <div class="sidebar">
-  <h3 style="text-align:center">Gajah Mas</h3>
-  <a class="active" data-section="kas">Kas</a>
-  <a data-section="hutang">Hutang Dagang</a>
+<h3 style="text-align:center">Gajah Mas</h3>
+<a class="active" onclick="showSection('hutang')">Hutang Dagang</a>
+<a onclick="showSection('kas')">Kas</a>
 </div>
 
 <div class="content">
-  <div id="kas" class="section active">
-    <h2>Kas</h2>
-    <p>Fitur kas masih pakai local dulu. Fokus hutang dulu ya mas.</p>
-  </div>
+<section id="hutang" class="active">
+<h2>Hutang Dagang</h2>
+<input id="supplier" placeholder="Nama Supplier">
+<input id="jumlah" type="number" placeholder="Jumlah Hutang">
+<button onclick="addHutang()">Simpan</button>
+<table id="tabelHutang"><thead><tr><th>Supplier</th><th>Jumlah</th><th>Tanggal</th></tr></thead><tbody></tbody></table>
+</section>
 
-  <div id="hutang" class="section">
-    <h2>Hutang Dagang</h2>
-    <input id="tgl" type="date">
-    <input id="supplier" placeholder="Nama Supplier">
-    <input id="nominal" type="number" placeholder="Nominal">
-    <input id="bayar" type="number" placeholder="Bayar">
-    <button onclick="tambahHutang()">Simpan</button>
-    <br><br>
-    <table>
-      <thead><tr><th>Tanggal</th><th>Supplier</th><th>Nominal</th><th>Bayar</th><th>Sisa</th></tr></thead>
-      <tbody id="tabelHutang"></tbody>
-    </table>
-  </div>
+<section id="kas">
+<h2>Kas</h2>
+<p>Fitur kas masih pakai local dulu. Fokus hutang dulu ya mas.</p>
+</section>
 </div>
 
 <script>
-// Ganti dengan data Supabase mas
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....'
+const SUPABASE_URL = 'https://ncgwukgnhywfavlgnwdy.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_byIT6sghNAoX7zC6Gjkcudw_hNac7...'
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 
-// Menu switch
-document.querySelectorAll('.sidebar a').forEach(link=>{
-  link.addEventListener('click', e=>{
-    e.preventDefault();
-    document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-    link.classList.add('active');
-    const sec = link.dataset.section;
-    document.getElementById(sec).classList.add('active');
-    if(sec==='hutang') loadHutang();
-  });
-});
+function showSection(id){
+document.querySelectorAll('section').forEach(s=>s.classList.remove('active'))
+document.getElementById(id).classList.add('active')
+document.querySelectorAll('.sidebar a').forEach(a=>a.classList.remove('active'))
+event.target.classList.add('active')
+if(id==='hutang') loadHutang()
+}
 
-// Load data hutang dari Supabase
 async function loadHutang(){
-  const {data, error} = await supabase.from('hutang').select('*').order('created_at',{ascending:false});
-  if(error){console.error(error); return;}
-  const tbody = document.getElementById('tabelHutang');
-  tbody.innerHTML = '';
-  data.forEach(r=>{
-    const sisa = r.nominal - r.bayar;
-    tbody.innerHTML += `<tr><td>${r.tanggal}</td><td>${r.supplier}</td><td>${r.nominal}</td><td>${r.bayar}</td><td>${sisa}</td></tr>`;
-  });
+const {data,error} = await supabase.from('hutang_dagang').select('*').order('created_at',{ascending:false})
+if(error){console.log(error);return}
+const tbody = document.querySelector('#tabelHutang tbody')
+tbody.innerHTML = data.map(r=>`<tr><td>${r.supplier}</td><td>${r.jumlah}</td><td>${new Date(r.created_at).toLocaleDateString()}</td></tr>`).join('')
 }
 
-// Tambah hutang ke Supabase
-async function tambahHutang(){
-  const tgl = document.getElementById('tgl').value;
-  const supplier = document.getElementById('supplier').value;
-  const nominal = parseInt(document.getElementById('nominal').value);
-  const bayar = parseInt(document.getElementById('bayar').value)||0;
-  
-  const {error} = await supabase.from('hutang').insert([{tanggal:tgl,supplier, nominal, bayar}]);
-  if(error){alert('Gagal simpan: '+error.message); return;}
-  loadHutang();
-  document.getElementById('supplier').value='';
-  document.getElementById('nominal').value='';
-  document.getElementById('bayar').value='';
+async function addHutang(){
+const supplier = document.getElementById('supplier').value
+const jumlah = document.getElementById('jumlah').value
+if(!supplier || !jumlah) return alert('Isi semua')
+const {error} = await supabase.from('hutang_dagang').insert([{supplier,jumlah:parseInt(jumlah)}])
+if(error) alert(error.message)
+else{alert('Tersimpan');document.getElementById('supplier').value='';document.getElementById('jumlah').value='';loadHutang()}
 }
 
-// Load awal
-loadHutang();
+loadHutang()
 </script>
 </body>
 </html>
