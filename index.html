@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 <style>
-/* CSS ASLI ANDA */
+/* Struktur Asli Anda */
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .header .logo{font-weight:700;color:#d4af37;font-size:16px}
@@ -16,13 +16,12 @@ body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .menu-item{padding:12px 20px;cursor:pointer;font-size:14px;color:#333;transition:all 0.2s}
 .menu-item:hover{background:#f0f5ff;color:#004aad}
 .menu-item.active{background:#004aad;color:#fff;font-weight:600}
-.submenu{display:none;padding-left:20px}.submenu.show{display:block}
-.content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto;overflow-x:hidden}
+.content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto}
 .table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left;font-weight:700;font-size:12px;white-space:nowrap}
-td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-@media (max-width: 768px) { .menu-btn{display:block} .sidebar{position:fixed;top:50px;left:0;height:calc(100vh - 50px);transform:translateX(-100%);box-shadow:2px 0 8px rgba(0,0,0,0.15)} .sidebar.open{transform:translateX(0)} }
+th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left}
+td{padding:8px;border-bottom:1px solid #eee}
+@media (max-width: 768px) { .menu-btn{display:block} .sidebar{position:fixed;top:50px;left:0;height:calc(100vh - 50px);transform:translateX(-100%)} .sidebar.open{transform:translateX(0)} }
 </style>
 </head>
 <body>
@@ -32,7 +31,7 @@ td{padding:8px;border-bottom:1px solid #eee;text-align:left}
   <div class="header">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <div class="logo">Gajah Mas</div>
-    <div class="sub" id="syncStatus">Private Data</div>
+    <div class="sub">Private Data</div>
   </div>
   <div class="layout">
     <div class="sidebar" id="sidebar"><div id="menuContainer"></div></div>
@@ -42,33 +41,7 @@ td{padding:8px;border-bottom:1px solid #eee;text-align:left}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// --- VARIABEL DAN HALAMAN ASLI ---
-const pages = {
-  hutang: `
-    <div class="table-wrap">
-      <h3>Data Hutang Dagang</h3>
-      <input type="file" id="fileHutang" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
-      <div class="table-scroll" id="tableArea">
-        <p style="color:#666">Silakan pilih file Excel Hutang.</p>
-      </div>
-    </div>
-  `,
-  ringkasan: `<h3>Ringkasan</h3>`, 
-  // (Tambahkan isi halaman lain sesuai kode asli Anda)
-};
-
-// --- LOGIKA HUTANG ---
-function prosesHutang(e) {
-  let file = e.target.files[0];
-  let reader = new FileReader();
-  reader.onload = function(evt) {
-    let wb = XLSX.read(evt.target.result, {type: 'binary'});
-    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    renderHutang(data);
-  };
-  reader.readAsBinaryString(file);
-}
-
+// --- LOGIKA HUTANG (FITUR TAMBAHAN) ---
 function renderHutang(data) {
   const clean = (val) => parseFloat(String(val).replace(/[^0-9]/g, '')) || 0;
   let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
@@ -76,12 +49,34 @@ function renderHutang(data) {
     let nom = clean(r['Nominal']);
     let bay = clean(r['Pembayaran']);
     let sisa = nom - bay;
-    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString()}</td><td>Rp ${bay.toLocaleString()}</td><td>Rp ${sisa.toLocaleString()}</td></tr>`;
+    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString('id-ID')}</td><td>Rp ${bay.toLocaleString('id-ID')}</td><td>Rp ${sisa.toLocaleString('id-ID')}</td></tr>`;
   });
   document.getElementById('tableArea').innerHTML = html + '</table>';
 }
 
-// --- FUNGSI PENDUKUNG (Pertahankan kode asli Anda di bawah sini) ---
+function prosesHutang(e) {
+  let reader = new FileReader();
+  reader.onload = function(evt) {
+    let wb = XLSX.read(evt.target.result, {type: 'binary'});
+    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    renderHutang(data);
+  };
+  reader.readAsBinaryString(e.target.files[0]);
+}
+
+// --- FUNGSI ASLI ANDA ---
+const pages = {
+  hutang: `
+    <div class="table-wrap">
+      <h3>Data Hutang Dagang</h3>
+      <input type="file" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
+      <div id="tableArea"><p>Silakan upload file Excel hutang Anda.</p></div>
+    </div>
+  `,
+  ringkasan: `<h3>Ringkasan Penjualan</h3>`,
+  datatable: `<h3>Data Penjualan</h3>`
+};
+
 function masuk(){
   document.getElementById('landing').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
@@ -90,11 +85,14 @@ function masuk(){
 }
 
 function buildMenu(){
-  // (Masukkan logika buildMenu asli Anda)
+  let items = ['ringkasan', 'datatable', 'hutang'];
+  let html = items.map(id => `<div class="menu-item" onclick="show('${id}')">${id.charAt(0).toUpperCase() + id.slice(1)}</div>`).join('');
+  document.getElementById('menuContainer').innerHTML = html;
 }
 
 function show(id){
   document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
 }
 
 function toggleSidebar() {
