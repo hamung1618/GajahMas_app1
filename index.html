@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 <style>
-/* Struktur Asli Anda */
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .header .logo{font-weight:700;color:#d4af37;font-size:16px}
@@ -16,7 +15,10 @@ body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .menu-item{padding:12px 20px;cursor:pointer;font-size:14px;color:#333;transition:all 0.2s}
 .menu-item:hover{background:#f0f5ff;color:#004aad}
 .menu-item.active{background:#004aad;color:#fff;font-weight:600}
+.submenu{display:none;padding-left:20px}.submenu.show{display:block}
 .content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto}
+.landing{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#004aad,#0066cc)}
+.landing button{padding:15px 40px;font-size:16px;border:0;border-radius:8px;background:#d4af37;color:#000;cursor:pointer;font-weight:700}
 .table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left}
@@ -41,40 +43,18 @@ td{padding:8px;border-bottom:1px solid #eee}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// --- LOGIKA HUTANG (FITUR TAMBAHAN) ---
-function renderHutang(data) {
-  const clean = (val) => parseFloat(String(val).replace(/[^0-9]/g, '')) || 0;
-  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
-  data.forEach(r => {
-    let nom = clean(r['Nominal']);
-    let bay = clean(r['Pembayaran']);
-    let sisa = nom - bay;
-    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString('id-ID')}</td><td>Rp ${bay.toLocaleString('id-ID')}</td><td>Rp ${sisa.toLocaleString('id-ID')}</td></tr>`;
-  });
-  document.getElementById('tableArea').innerHTML = html + '</table>';
-}
-
-function prosesHutang(e) {
-  let reader = new FileReader();
-  reader.onload = function(evt) {
-    let wb = XLSX.read(evt.target.result, {type: 'binary'});
-    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    renderHutang(data);
-  };
-  reader.readAsBinaryString(e.target.files[0]);
-}
-
-// --- FUNGSI ASLI ANDA ---
 const pages = {
+  kas: `<h3>Kas</h3>`,
+  ringkasan: `<h3>Ringkasan</h3>`,
+  datatable: `<h3>Data Penjualan</h3>`,
+  piutang: `<h3>Piutang</h3>`,
   hutang: `
     <div class="table-wrap">
       <h3>Data Hutang Dagang</h3>
-      <input type="file" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
-      <div id="tableArea"><p>Silakan upload file Excel hutang Anda.</p></div>
+      <input type="file" id="fileHutang" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
+      <div id="tableAreaHutang"><p>Silakan upload file Excel hutang.</p></div>
     </div>
-  `,
-  ringkasan: `<h3>Ringkasan Penjualan</h3>`,
-  datatable: `<h3>Data Penjualan</h3>`
+  `
 };
 
 function masuk(){
@@ -85,8 +65,9 @@ function masuk(){
 }
 
 function buildMenu(){
-  let items = ['ringkasan', 'datatable', 'hutang'];
-  let html = items.map(id => `<div class="menu-item" onclick="show('${id}')">${id.charAt(0).toUpperCase() + id.slice(1)}</div>`).join('');
+  let html = ['kas', 'ringkasan', 'datatable', 'piutang', 'hutang'].map(id => 
+    `<div class="menu-item" onclick="show('${id}')">${id.charAt(0).toUpperCase() + id.slice(1)}</div>`
+  ).join('');
   document.getElementById('menuContainer').innerHTML = html;
 }
 
@@ -95,8 +76,30 @@ function show(id){
   document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
 }
 
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+// Logika khusus Hutang
+function prosesHutang(e) {
+  let file = e.target.files[0];
+  let reader = new FileReader();
+  reader.onload = function(evt) {
+    let wb = XLSX.read(evt.target.result, {type: 'binary'});
+    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    renderHutang(data);
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderHutang(data) {
+  const clean = (val) => parseFloat(String(val).replace(/[^0-9]/g, '')) || 0;
+  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+  data.forEach(r => {
+    let nom = clean(r['Nominal']);
+    let bay = clean(r['Pembayaran']);
+    let sisa = nom - bay;
+    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString()}</td><td>Rp ${bay.toLocaleString()}</td><td>Rp ${sisa.toLocaleString()}</td></tr>`;
+  });
+  document.getElementById('tableAreaHutang').innerHTML = html + '</table>';
 }
 </script>
 </body>
