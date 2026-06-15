@@ -1,74 +1,105 @@
-function parsePiutangExcelData(rawRows) {
-  if (!rawRows || rawRows.length === 0) return [];
-  
-  // Deteksi kolom otomatis berdasarkan nama header yang mirip
-  let keys = Object.keys(rawRows[0]);
-  let find = (syns) => keys.find(k => syns.some(s => k.toLowerCase().includes(s))) || keys[0];
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CV Gajah Mas</title>
+<style>
+/* CSS ASLI ANDA */
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
+.header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.header .logo{font-weight:700;color:#d4af37;font-size:16px}
+.header .sub{font-size:12px;opacity:0.9}
+.menu-btn{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0;margin-right:5px;outline:none}
+.layout{display:flex;min-height:calc(100vh - 50px);position:relative}
+.sidebar{width:220px;background:#fff;border-right:1px solid #ddd;padding:10px 0;flex-shrink:0;transition:transform 0.3s ease;z-index:90}
+.menu-item{padding:12px 20px;cursor:pointer;font-size:14px;color:#333;transition:all 0.2s}
+.menu-item:hover{background:#f0f5ff;color:#004aad}
+.menu-item.active{background:#004aad;color:#fff;font-weight:600}
+.submenu{display:none;padding-left:20px}.submenu.show{display:block}
+.content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto;overflow-x:hidden}
+.table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left;font-weight:700;font-size:12px;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+@media (max-width: 768px) { .menu-btn{display:block} .sidebar{position:fixed;top:50px;left:0;height:calc(100vh - 50px);transform:translateX(-100%);box-shadow:2px 0 8px rgba(0,0,0,0.15)} .sidebar.open{transform:translateX(0)} }
+</style>
+</head>
+<body>
 
-  let kCust = find(['cust', 'nama', 'toko', 'pelanggan']);
-  let kTgl = find(['tanggal', 'tgl']);
-  let kNom = find(['nominal', 'total', 'jumlah']);
-  let kBay = find(['bayar', 'terbayar', 'pembayaran']);
-  let kStat = find(['status', 'ket']);
+<div id="landing" class="landing"><button onclick="masuk()">Masuk</button></div>
+<div id="dashboard" style="display:none">
+  <div class="header">
+    <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+    <div class="logo">Gajah Mas</div>
+    <div class="sub" id="syncStatus">Private Data</div>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar"><div id="menuContainer"></div></div>
+    <div class="content" id="mainContent"></div>
+  </div>
+</div>
 
-  return rawRows.map(row => ({
-    customer: row[kCust] || '-',
-    tanggal: row[kTgl] || '-',
-    nominal: parseFloat(String(row[kNom]).replace(/[^0-9]/g, '')) || 0,
-    terbayar: parseFloat(String(row[kBay]).replace(/[^0-9]/g, '')) || 0,
-    status: row[kStat] || 'Belum Lunas'
-  }));
-}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// --- VARIABEL DAN HALAMAN ASLI ---
+const pages = {
+  hutang: `
+    <div class="table-wrap">
+      <h3>Data Hutang Dagang</h3>
+      <input type="file" id="fileHutang" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
+      <div class="table-scroll" id="tableArea">
+        <p style="color:#666">Silakan pilih file Excel Hutang.</p>
+      </div>
+    </div>
+  `,
+  ringkasan: `<h3>Ringkasan</h3>`, 
+  // (Tambahkan isi halaman lain sesuai kode asli Anda)
+};
 
-function uploadPiutangExcel() {
-  let file = document.getElementById('piutangFile').files[0];
-  if(!file) return;
-
+// --- LOGIKA HUTANG ---
+function prosesHutang(e) {
+  let file = e.target.files[0];
   let reader = new FileReader();
-  reader.onload = function(e) {
-    let workbook = XLSX.read(e.target.result, {type: 'binary'});
-    let data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-    let processed = parsePiutangExcelData(data);
-    
-    localStorage.setItem('piutang_data', JSON.stringify(processed));
-    dataPiutang = processed;
-    
-    showNotification('Piutang berhasil diperbarui!', 'success');
-    resetPiutangUploadForm();
-    hitungDanTampilPiutang();
-    renderPiutangTable();
+  reader.onload = function(evt) {
+    let wb = XLSX.read(evt.target.result, {type: 'binary'});
+    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    renderHutang(data);
   };
   reader.readAsBinaryString(file);
 }
 
-function hitungDanTampilPiutang() {
-  let totalNominal = dataPiutang.reduce((sum, item) => sum + item.nominal, 0);
-  let totalTerbayar = dataPiutang.reduce((sum, item) => sum + item.terbayar, 0);
-  
-  document.getElementById('lblTotalPiutang').innerText = 'Rp ' + totalNominal.toLocaleString('id-ID');
-  document.getElementById('lblTotalTerbayar').innerText = 'Rp ' + totalTerbayar.toLocaleString('id-ID');
-  document.getElementById('lblSisaPiutang').innerText = 'Rp ' + (totalNominal - totalTerbayar).toLocaleString('id-ID');
-}
-
-function renderPiutangTable() {
-  let statusFilter = document.getElementById('filterStatusPiutang').value;
-  let filtered = statusFilter ? dataPiutang.filter(i => i.status === statusFilter) : dataPiutang;
-  
-  let html = `<table><thead><tr><th>Customer</th><th>Tanggal</th><th>Nominal</th><th>Terbayar</th><th>Status</th></tr></thead><tbody>`;
-  filtered.forEach((r, idx) => {
-    html += `<tr>
-      <td>${r.customer}</td>
-      <td>${r.tanggal}</td>
-      <td>Rp ${r.nominal.toLocaleString('id-ID')}</td>
-      <td>Rp ${r.terbayar.toLocaleString('id-ID')}</td>
-      <td>${r.status}</td>
-    </tr>`;
+function renderHutang(data) {
+  const clean = (val) => parseFloat(String(val).replace(/[^0-9]/g, '')) || 0;
+  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+  data.forEach(r => {
+    let nom = clean(r['Nominal']);
+    let bay = clean(r['Pembayaran']);
+    let sisa = nom - bay;
+    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString()}</td><td>Rp ${bay.toLocaleString()}</td><td>Rp ${sisa.toLocaleString()}</td></tr>`;
   });
-  html += `</tbody></table>`;
-  document.getElementById('piutangTableScroll').innerHTML = html;
+  document.getElementById('tableArea').innerHTML = html + '</table>';
 }
 
-function resetPiutangFilter() {
-  document.getElementById('filterStatusPiutang').value = '';
-  renderPiutangTable();
+// --- FUNGSI PENDUKUNG (Pertahankan kode asli Anda di bawah sini) ---
+function masuk(){
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  buildMenu();
+  show('ringkasan');
 }
+
+function buildMenu(){
+  // (Masukkan logika buildMenu asli Anda)
+}
+
+function show(id){
+  document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+</script>
+</body>
+</html>
