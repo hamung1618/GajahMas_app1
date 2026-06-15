@@ -2,104 +2,89 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CV Gajah Mas</title>
+<title>CV Gajah Mas - Dashboard</title>
 <style>
-/* CSS tetap sama */
-body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
-.header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.sidebar{width:220px;background:#fff;border-right:1px solid #ddd;padding:10px 0;flex-shrink:0}
-.menu-item{padding:12px 20px;cursor:pointer;font-size:14px;color:#333}
-.menu-item:hover{background:#f0f5ff;color:#004aad}
-.menu-item.active{background:#004aad;color:#fff;font-weight:600}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f7f6}
+.header{background:#004aad;color:#fff;padding:15px 20px;}
+.container{display:flex}
+.sidebar{width:200px;background:#fff;height:100vh;border-right:1px solid #ddd}
+.menu-item{padding:15px;cursor:pointer;border-bottom:1px solid #eee}
+.menu-item:hover{background:#eef}
 .content{flex:1;padding:20px}
-.table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#004aad;color:#d4af37;padding:10px;text-align:left}
-td{padding:8px;border-bottom:1px solid #eee}
-.btn-aksi{padding:8px 15px;border:none;border-radius:5px;cursor:pointer;background:#004aad;color:#fff}
+.summary-card{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;display:flex;gap:20px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+.stat{flex:1;text-align:center}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:10px;border:1px solid #ddd;text-align:left}
 </style>
 </head>
 <body>
 
-<div id="dashboard">
-  <div class="header"><div class="logo">Gajah Mas</div></div>
-  <div style="display:flex">
-    <div class="sidebar" id="menuContainer"></div>
-    <div class="content" id="mainContent"></div>
+<div class="header"><h2>Dashboard Gajah Mas</h2></div>
+<div class="container">
+  <div class="sidebar">
+    <div class="menu-item" onclick="loadPage('kas')">Kas</div>
+    <div class="menu-item" onclick="loadPage('piutang')">Piutang</div>
+    <div class="menu-item" onclick="loadPage('hutang')">Hutang Dagang</div>
+  </div>
+  <div class="content" id="mainContent">
+    <h3>Pilih Menu di samping</h3>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// Menu Data
-const menuData = [
-  {id: 'kas', label: 'Kas'},
-  {id: 'piutang', label: 'Piutang'},
-  {id: 'hutang', label: 'Hutang Dagang'}
-];
-
 const pages = {
+  kas: "<h3>Halaman Kas</h3><p>Fitur Kas akan segera tersedia.</p>",
+  piutang: "<h3>Halaman Piutang</h3><p>Fitur Piutang akan segera tersedia.</p>",
   hutang: `
-    <div class="table-wrap">
-      <h3>Data Hutang Dagang</h3>
-      <div id="hutangTableScroll">
-        <p style="color:#666">Belum ada data. Silakan upload file Excel hutang Anda.</p>
-      </div>
-      <div style="margin-top:20px;">
-        <input type="file" id="fileHutang" accept=".xlsx, .xls, .csv" onchange="prosesFileHutang(this)" style="display:none">
-        <button class="btn-aksi" onclick="document.getElementById('fileHutang').click()">Upload File Excel Hutang</button>
-      </div>
-    </div>
+    <h3>Data Hutang Dagang</h3>
+    <div class="summary-card" id="summary"></div>
+    <input type="file" id="fileIn" onchange="handleFile(event)" style="margin-bottom:10px">
+    <div id="tableArea"></div>
   `
 };
 
-function buildMenu() {
-  let html = '';
-  menuData.forEach(item => {
-    html += `<div class="menu-item" onclick="show('${item.id}')">${item.label}</div>`;
-  });
-  document.getElementById('menuContainer').innerHTML = html;
+function loadPage(id) {
+  document.getElementById('mainContent').innerHTML = pages[id];
+  if(id === 'hutang') renderHutang(JSON.parse(localStorage.getItem('data_hutang') || '[]'));
 }
 
-function show(id) {
-  document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
-  if(id === 'hutang') {
-    renderHutangTable(JSON.parse(localStorage.getItem('data_hutang') || '[]'));
-  }
-}
-
-function prosesFileHutang(input) {
-  let file = input.files[0];
+function handleFile(e) {
   let reader = new FileReader();
-  reader.onload = function(e) {
-    let workbook = XLSX.read(e.target.result, {type: 'binary'});
-    let newData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-    let oldData = JSON.parse(localStorage.getItem('data_hutang') || '[]');
-    let combined = oldData.concat(newData);
-    localStorage.setItem('data_hutang', JSON.stringify(combined));
-    renderHutangTable(combined);
-    alert('Data berhasil ditambahkan!');
+  reader.onload = function(evt) {
+    let wb = XLSX.read(evt.target.result, {type: 'binary'});
+    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    localStorage.setItem('data_hutang', JSON.stringify(data));
+    renderHutang(data);
   };
-  reader.readAsBinaryString(file);
+  reader.readAsBinaryString(e.target.files[0]);
 }
 
-function renderHutangTable(data) {
-  let container = document.getElementById('hutangTableScroll');
-  if(!container) return;
-  if(data.length === 0) return;
+function renderHutang(data) {
+  let now = new Date();
+  let thisMonth = now.getMonth();
+  let nextMonth = now.getMonth() + 1;
   
-  let html = '<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Ket</th><th>Belum Terbayar</th></tr></thead><tbody>';
+  let mIni = {bayar:0, sisa:0}, mDepan = {bayar:0, sisa:0};
+  
   data.forEach(row => {
-    html += `<tr><td>${row['Tanggal']||''}</td><td>${row['Suplier']||''}</td><td>${row['Nominal']||''}</td><td>${row['Pembayaran']||''}</td><td>${row['Ket']||''}</td><td>${row['Belum Terbayar']||''}</td></tr>`;
+    let tgl = new Date(row['Tanggal']);
+    let nom = parseFloat(row['Nominal']||0);
+    let bay = parseFloat(row['Pembayaran']||0);
+    
+    if(tgl.getMonth() === thisMonth) { mIni.bayar += bay; mIni.sisa += (nom - bay); }
+    if(tgl.getMonth() === nextMonth) { mDepan.bayar += bay; mDepan.sisa += (nom - bay); }
   });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
 
-// Inisialisasi
-buildMenu();
-show('kas');
+  document.getElementById('summary').innerHTML = `
+    <div class="stat"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar}<br>Sisa: ${mIni.sisa}</div>
+    <div class="stat"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar}<br>Sisa: ${mDepan.sisa}</div>
+  `;
+  
+  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+  data.forEach(r => html += `<tr><td>${r['Tanggal']}</td><td>${r['Suplier']}</td><td>${r['Nominal']}</td><td>${r['Pembayaran']}</td><td>${r['Nominal'] - r['Pembayaran']}</td></tr>`);
+  document.getElementById('tableArea').innerHTML = html + '</table>';
+}
 </script>
 </body>
 </html>
