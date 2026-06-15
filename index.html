@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 
-<!-- FIX REFRESH 404 + MASUK BUTTON -->
+<!-- FIX REFRESH 404 UNTUK GITHUB PAGES REPO SITE -->
 <script>
 (function(l) {
   if (l.search[1] === '/') {
@@ -18,6 +18,14 @@
   }
 })(window.location)
 </script>
+
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004aad">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gajah Mas">
+<link rel="apple-touch-icon" href="https://img.icons8.com/color/192/000/briefcase.png">
 
 <style>
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
@@ -113,48 +121,50 @@ tr:hover td{background:#f8f9fa}
   z-index: 85;
 }
 
-/* MEDIA QUERIES UNTUK TAMPILAN HP */
+/* MEDIA QUERIES UNTUK TAMPILAN HP (MAKSIMAL LEBAR LAYAR 768px) */
 @media (max-width: 768px) {
-.menu-btn {
-    display: block;
+ .menu-btn {
+    display: block; /* Tampilkan tombol hamburger */
   }
 
-.sidebar {
+ .sidebar {
     position: fixed;
     top: 50px;
     left: 0;
     height: calc(100vh - 50px);
-    transform: translateX(-100%);
+    transform: translateX(-100%); /* Sembunyikan sidebar ke kiri luar layar */
     box-shadow: 2px 0 8px rgba(0,0,0,0.15);
   }
 
-.sidebar.open {
-    transform: translateX(0);
+ .sidebar.open {
+    transform: translateX(0); /* Munculkan sidebar saat ditekan */
   }
 
-.sidebar-overlay.show {
-    display: block;
+ .sidebar-overlay.show {
+    display: block; /* Munculkan layar gelap pelindung di belakang sidebar */
   }
 
-.content {
-    padding: 12px;
+ .content {
+    padding: 12px; /* Perkecil padding kontainer di HP */
   }
 
-.ringkasan {
+  /* Ubah susunan Grid menjadi 1 kolom saja di HP */
+ .ringkasan {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-.box-container {
+ .box-container {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-.box {
+ .box {
     min-height: auto;
   }
 
-.editing input,.editing select {
+  /* Mengatur tampilan input edit inline agar tidak meluap di tabel HP */
+ .editing input,.editing select {
     min-width: 80px;
   }
 }
@@ -167,20 +177,27 @@ tr:hover td{background:#f8f9fa}
 </div>
 
 <div id="dashboard" style="display:none">
+  <!-- Header dengan tombol Hamburger di HP -->
   <div class="header">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <div class="logo">Gajah Mas</div>
-    <div class="sub">Private Data</div>
+    <div class="sub" id="syncStatus">Private Data</div>
   </div>
   <div class="layout">
+    <!-- Overlay Gelap -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
       <div id="menuContainer"></div>
     </div>
+
+    <!-- Area Konten Utama -->
     <div class="content" id="mainContent"></div>
   </div>
 </div>
 
+<!-- Modal Konfirmasi Custom (Pengganti confirm bawaan browser) -->
 <div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; align-items:center; justify-content:center;">
   <div style="background:white; padding:25px; border-radius:10px; width:90%; max-width:350px; text-align:center; box-shadow:0 5px 15px rgba(0,0,0,0.3);">
     <h3 style="margin-top:0; color:#004aad;">Konfirmasi Hapus</h3>
@@ -194,13 +211,29 @@ tr:hover td{background:#f8f9fa}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-function masuk(){
+// DAFTARKAN SERVICE WORKER UNTUK SISTEM INSTALASI PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+     .then(reg => console.log('PWA Service Worker terdaftar!', reg))
+     .catch(err => console.log('Gagal mendaftarkan Service Worker:', err));
+  });
+}
+
+async function masuk(){
   document.getElementById('landing').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   dataGlobal = JSON.parse(localStorage.getItem('penjualan')||'[]');
   dataPiutang = JSON.parse(localStorage.getItem('piutang_data')||'[]');
   buildMenu();
   show('ringkasan');
+
+  // AUTO-SYNC: Langsung ambil data terbaru dari cloud saat login jika URL cloud ada
+  let url = localStorage.getItem('cloudApiUrl');
+  if(url) {
+    updateSyncStatus('Memuat data cloud...');
+    await pullDariCloud(true); // true = silent loading tanpa popup mengganggu
+  }
 }
 
 let dataGlobal = [];
@@ -209,6 +242,22 @@ let editingRow = null;
 let editingRowPiutang = null;
 let dataStore = {saldoAwal: [], pemasukan: [], pengeluaran: [], saldoAkhir: []};
 
+// Fungsi mengubah label status sinkronisasi di navbar atas
+function updateSyncStatus(text, color = '#ffc107') {
+  const statusEl = document.getElementById('syncStatus');
+  if (statusEl) {
+    statusEl.innerHTML = `<span style="color:${color}; font-weight:600;">● ${text}</span>`;
+  }
+}
+
+function resetSyncStatus() {
+  const statusEl = document.getElementById('syncStatus');
+  if (statusEl) {
+    statusEl.innerHTML = 'Private Data';
+  }
+}
+
+// Fungsi membuka dan menutup sidebar di perangkat HP
 function toggleSidebar() {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
@@ -312,6 +361,8 @@ const pages = {
         Gunakan menu di bawah ini untuk menyaring status piutang customer, mengedit data nominal secara langsung, atau menghapus baris.
       </p>
     </div>
+
+    <!-- Summary Cards Piutang -->
     <div class="ringkasan" style="margin-bottom:15px;">
       <div style="background:#fff; padding:15px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1)">
         Total Nominal Piutang : <b id="lblTotalPiutang" style="font-size:16px; color:#004aad">Rp 0</b>
@@ -323,6 +374,8 @@ const pages = {
         Total Sisa Piutang : <b id="lblSisaPiutang" style="font-size:16px; color:#dc3545">Rp 0</b>
       </div>
     </div>
+
+    <!-- Tabel Data Piutang -->
     <div class="table-wrap" style="margin-bottom: 15px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
         <h3 style="margin: 0;">Daftar Piutang Customer</h3>
@@ -340,6 +393,8 @@ const pages = {
         <p style="color:#666; text-align: center; padding: 20px 0;">Belum ada data piutang. Silakan unggah file <b>Piutang2.xlsx</b> di menu unggah kecil di bawah.</p>
       </div>
     </div>
+
+    <!-- Area Unggah File Piutang di Bagian Terbawah -->
     <div class="table-wrap" style="padding: 12px 18px; background: #fafbfc; border-top: 2px solid #004aad; margin-bottom: 0;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
         <div style="font-size: 12px; color: #555;">
@@ -347,11 +402,13 @@ const pages = {
         </div>
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <input type="file" id="piutangFile" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handlePiutangFileSelected(this)">
+
           <div id="uploadDragAreaPiutang">
             <button class="btn-aksi btn-simpan" style="background: #004aad; margin: 0; padding: 6px 14px; font-size: 12px;" onclick="document.getElementById('piutangFile').click()">
               📎 Pilih File Piutang
             </button>
           </div>
+
           <div id="fileSelectedInfoPiutang" style="display: none; align-items: center; gap: 8px;">
             <span id="fileNameTextPiutang" style="font-size: 12px; font-weight: 600; color: #333; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
             <button class="btn-aksi btn-simpan" style="padding: 5px 10px; font-size: 11px; margin: 0;" onclick="uploadPiutangExcel()">Proses Upload</button>
@@ -384,7 +441,9 @@ const pages = {
         <button class="btn-aksi btn-simpan" onclick="pushKeCloud()" style="background:#004aad; margin:0;">☁️ Upload Data ke Cloud</button>
         <button class="btn-aksi btn-edit" onclick="pullDariCloud()" style="background:#28a745; color:white; margin:0;">🔄 Download Data dari Cloud</button>
       </div>
+
       <hr style="border:0; border-top:1px solid #eee; margin-bottom:20px;">
+
       <h3>Backup & Download Data Lokal</h3>
       <p style="margin-bottom:15px;font-size:13px;color:#666">Pilih data yang mau di-backup, lalu klik tombol Download</p>
       <div id="backupList"></div>
@@ -439,15 +498,19 @@ function toggleSubmenu(id){
 function show(id){
   document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
   document.querySelectorAll('.menu-item').forEach(d=>d.classList.remove('active'));
+
   if(event && event.target) {
     event.target.classList.add('active');
   }
+
+  // Auto-close sidebar di HP jika salah satu menu di-klik
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
   if (window.innerWidth <= 768 && sidebar.classList.contains('open')) {
     sidebar.classList.remove('open');
     overlay.classList.remove('show');
   }
+
   setTimeout(()=>{
     if(id === 'datatable'){
       isiDropdownFilter();
@@ -491,6 +554,7 @@ function showNotification(message, type = 'info') {
     `;
     document.body.appendChild(banner);
   }
+
   if (type === 'success') {
     banner.style.background = '#28a745';
   } else if (type === 'error') {
@@ -498,9 +562,11 @@ function showNotification(message, type = 'info') {
   } else {
     banner.style.background = '#004aad';
   }
+
   banner.innerText = message;
   banner.style.opacity = '1';
   banner.style.transform = 'translateY(0)';
+
   setTimeout(() => {
     banner.style.opacity = '0';
     banner.style.transform = 'translateY(-20px)';
@@ -572,6 +638,9 @@ function uploadFileKeu(type){
         dataStore[type] = data;
         renderKeuangan();
         showNotification('Berhasil mengunggah ' + data.length + ' baris data keuangan', 'success');
+
+        // AUTO-SYNC: Langsung backup ke cloud setiap kali upload saldo baru
+        pushKeCloud(true);
       } catch(err){
         showNotification('Gagal membaca file: ' + err.message, 'error');
       }
@@ -583,38 +652,4 @@ function uploadFileKeu(type){
 }
 
 function renderKeuangan(){
-  let totalAwal = sumColumn(dataStore.saldoAwal);
-  let totalMasuk = sumColumn(dataStore.pemasukan);
-  let totalKeluar = sumColumn(dataStore.pengeluaran);
-  let kasAkhir = totalAwal + totalMasuk - totalKeluar;
-  let totalAkhir = sumColumn(dataStore.saldoAkhir);
-
-  // Hitung total pemasukan cash dan piutang
-  let totalCash = 0, totalPiutang = 0;
-  if(dataStore.pemasukan.length){
-    dataStore.pemasukan.forEach(row=>{
-      let cash = parseInt(String(row['Uang Msuk Dari Penjualan Cash'] || row['Uang Masuk Dari Penjualan Cash'] || '').replace(/[^0-9]/g,'')) || 0;
-      let piutang = parseInt(String(row['Uang Masuk Dari Pembayaran Piutang'] || '').replace(/[^0-9]/g,'')) || 0;
-      totalCash += cash;
-      totalPiutang += piutang;
-    });
-    document.getElementById('boxPemasukan').innerHTML = makeTable(dataStore.pemasukan);
-  }
-  document.getElementById('totalPemasukanCash').innerText = 'Rp ' + totalCash.toLocaleString('id-ID');
-  document.getElementById('totalPemasukanPiutang').innerText = 'Rp ' + totalPiutang.toLocaleString('id-ID');
-
-  if(dataStore.saldoAwal.length){
-    document.getElementById('boxSaldoAwal').innerHTML = makeTable(dataStore.saldoAwal);
-    document.getElementById('totalSaldoAwal').innerText = 'Rp ' + totalAwal.toLocaleString('id-ID');
-  }
-  if(dataStore.saldoAkhir.length){
-    document.getElementById('boxSaldoAkhir').innerHTML = makeTable(dataStore.saldoAkhir);
-    document.getElementById('totalSaldoAkhir').innerText = 'Rp ' + totalAkhir.toLocaleString('id-ID');
-  }
-
-  document.getElementById('boxRumusKas').innerHTML = `
-    <div><b>Saldo Awal + Total Pemasukan</b><br>
-    Rp ${totalAwal.toLocaleString('id-ID')} + Rp ${totalMasuk.toLocaleString('id-ID')} = Rp ${(totalAwal+totalMasuk).toLocaleString('id-ID')}</div>
-    <div style="margin-top:12px"><b>Total Pengeluaran</b><br>
-    Rp ${totalKeluar.toLocaleString('id-ID')}</div>
-    <
+  let
