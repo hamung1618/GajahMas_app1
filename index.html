@@ -4,16 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
-<!-- PWA Meta Tags -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#004aad">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Gajah Mas">
-<link rel="apple-touch-icon" href="https://img.icons8.com/color/192/000000/briefcase.png">
-
 <style>
-body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
+body{margin:0;font-family:"Segoe UI",Arial,sans-seriaf;background:#f5f7fa}
 .header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .header .logo{font-weight:700;color:#d4af37;font-size:16px}
 .header .sub{font-size:12px;opacity:0.9}
@@ -166,7 +158,7 @@ tr:hover td{background:#f8f9fa}
   <div class="header">
     <button class="menu-btn" onclick="toggleSidebar()">☰</button>
     <div class="logo">Gajah Mas</div>
-    <div class="sub" id="syncStatus">Private Data</div>
+    <div class="sub">Private Data</div>
   </div>
   <div class="layout">
     <!-- Overlay Gelap -->
@@ -196,29 +188,13 @@ tr:hover td{background:#f8f9fa}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// DAFTARKAN SERVICE WORKER UNTUK SISTEM INSTALASI PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('PWA Service Worker terdaftar!', reg))
-      .catch(err => console.log('Gagal mendaftarkan Service Worker:', err));
-  });
-}
-
-async function masuk(){
+function masuk(){
   document.getElementById('landing').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   dataGlobal = JSON.parse(localStorage.getItem('penjualan')||'[]');
   dataPiutang = JSON.parse(localStorage.getItem('piutang_data')||'[]');
   buildMenu();
   show('ringkasan');
-  
-  // AUTO-SYNC: Langsung ambil data terbaru dari cloud saat login jika URL cloud ada
-  let url = localStorage.getItem('cloudApiUrl');
-  if(url) {
-    updateSyncStatus('Memuat data cloud...');
-    await pullDariCloud(true); // true = silent loading tanpa popup mengganggu
-  }
 }
 
 let dataGlobal = [];
@@ -226,21 +202,6 @@ let dataPiutang = [];
 let editingRow = null;
 let editingRowPiutang = null;
 let dataStore = {saldoAwal: [], pemasukan: [], pengeluaran: [], saldoAkhir: []};
-
-// Fungsi mengubah label status sinkronisasi di navbar atas
-function updateSyncStatus(text, color = '#ffc107') {
-  const statusEl = document.getElementById('syncStatus');
-  if (statusEl) {
-    statusEl.innerHTML = `<span style="color:${color}; font-weight:600;">● ${text}</span>`;
-  }
-}
-
-function resetSyncStatus() {
-  const statusEl = document.getElementById('syncStatus');
-  if (statusEl) {
-    statusEl.innerHTML = 'Private Data';
-  }
-}
 
 // Fungsi membuka dan menutup sidebar di perangkat HP
 function toggleSidebar() {
@@ -612,9 +573,6 @@ function uploadFileKeu(type){
         dataStore[type] = data;
         renderKeuangan();
         showNotification('Berhasil mengunggah ' + data.length + ' baris data keuangan', 'success');
-        
-        // AUTO-SYNC: Langsung backup ke cloud setiap kali upload saldo baru
-        pushKeCloud(true);
       } catch(err){
         showNotification('Gagal membaca file: ' + err.message, 'error');
       }
@@ -742,9 +700,6 @@ function uploadCSV(){
         </div>
       `;
       resetUploadForm();
-      
-      // AUTO-SYNC: Sinkronkan ke cloud pasca-upload
-      pushKeCloud(true);
     } catch(err) {
       showNotification('Gagal memproses file penjualan: ' + err.message, 'error');
     }
@@ -781,14 +736,13 @@ function parsePiutangExcelData(rawRows) {
   };
   
   let keyCustomer = findKey(['customer', 'debitur', 'nama', 'toko', 'pelanggan']);
-  let keyTanggal = findKey(['tanggal', 'tglfaktur', 'tgl', 'tgltrans']);
-  let keyJatuhTempo = findKey(['jatuhtempo', 'tempo', 'duedate', 'tgltempo']);
-  let keyInvoice = findKey(['faktur', 'invoice', 'nota', 'nofaktur', 'noinv', 'notafaktur']);
+  let keyTanggal = findKey(['tanggal', 'tglfaktur', 'tgl']);
+  let keyJatuhTempo = findKey(['jatuhtempo', 'tempo', 'duedate']);
+  let keyInvoice = findKey(['faktur', 'invoice', 'nota', 'nofaktur', 'noinv']);
   let keyNominal = findKey(['nominal', 'piutang', 'jumlah', 'total', 'nilaipiutang', 'debet']);
   let keyTerbayar = findKey(['terbayar', 'bayar', 'sudahbayar', 'kredit']);
   let keySisa = findKey(['sisa', 'sisapiutang', 'sisatagihan', 'saldo']);
   let keyStatus = findKey(['status', 'keterangan']);
-  let keyOverdue = findKey(['overd', 'overdue', 'usia', 'hari', 'days', 'usiapiutang']); // Mendeteksi kolom overD
   
   return rawRows.map(row => {
     let rawNominal = keyNominal ? String(row[keyNominal] || '') : '0';
@@ -807,44 +761,35 @@ function parsePiutangExcelData(rawRows) {
     let tanggal = keyTanggal ? String(row[keyTanggal] || '').trim() : '-';
     let jatuhTempo = keyJatuhTempo ? String(row[keyJatuhTempo] || '').trim() : '-';
     let invoice = keyInvoice ? String(row[keyInvoice] || '').trim() : '-';
-    let overD = keyOverdue ? String(row[keyOverdue] || '').trim() : '';
-    
-    // Konversi overD ke integer/angka murni
-    let overDNum = parseInt(overD.replace(/[^0-9\-]/g, '')) || 0;
-    
-    // Algoritma Cadangan: Hitung overD otomatis berdasarkan tanggal 2026 jika datanya kosong
-    if (!overD && jatuhTempo !== '-' && sisa > 0) {
-      try {
-        let today = new Date(2026, 5, 15); // Diset default pertengahan Juni 2026 sesuai tanggal transaksi
-        let parts = jatuhTempo.split(/[\/\-]/);
-        if (parts.length === 3) {
-          let due;
-          if (parts[2].length === 2) parts[2] = '20' + parts[2];
-          if (parts[0].length === 4) {
-            due = new Date(parts[0], parts[1]-1, parts[2]);
-          } else {
-            due = new Date(parts[2], parts[1]-1, parts[0]);
-          }
-          let diffTime = today - due;
-          let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          if (diffDays > 0) {
-            overDNum = diffDays;
-          }
-        }
-      } catch(e) {}
-    }
     
     let status = keyStatus ? String(row[keyStatus] || '').trim() : '';
     if (!status) {
       if (sisa <= 0) {
         status = 'Lunas';
-        overDNum = 0; // Jika lunas, overD otomatis jadi 0
       } else {
-        status = overDNum > 0 ? 'Jatuh Tempo' : 'Belum Lunas';
+        status = 'Belum Lunas';
+        if (jatuhTempo !== '-') {
+          try {
+            let today = new Date();
+            let parts = jatuhTempo.split(/[\/\-]/);
+            if (parts.length === 3) {
+              let due;
+              if (parts[2].length === 2) parts[2] = '20' + parts[2];
+              if (parts[0].length === 4) {
+                due = new Date(parts[0], parts[1]-1, parts[2]);
+              } else {
+                due = new Date(parts[2], parts[1]-1, parts[0]);
+              }
+              if (due < today) {
+                status = 'Jatuh Tempo';
+              }
+            }
+          } catch(e) {}
+        }
       }
     }
     
-    return { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, overD: overDNum, status };
+    return { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, status };
   });
 }
 
@@ -897,9 +842,6 @@ function uploadPiutangExcel() {
       resetPiutangUploadForm();
       hitungDanTampilPiutang();
       renderPiutangTable();
-      
-      // AUTO-SYNC: Sinkronkan ke cloud pasca-upload
-      pushKeCloud(true);
     } catch(err) {
       showNotification('Gagal memproses file piutang: ' + err.message, 'error');
     }
@@ -946,8 +888,7 @@ function renderPiutangTable() {
     return;
   }
   
-  // Menambahkan header "Overdue" sebelum Status
-  let headers = ['Nama Customer', 'Tanggal', 'No. Faktur', 'Jatuh Tempo', 'Nominal', 'Terbayar', 'Sisa', 'Overdue', 'Status', 'Aksi'];
+  let headers = ['Nama Customer', 'Tanggal', 'No. Faktur', 'Jatuh Tempo', 'Nominal', 'Terbayar', 'Sisa', 'Status', 'Aksi'];
   let html = '<table><thead><tr>';
   headers.forEach(h => html += '<th>' + h + '</th>');
   html += '</tr></thead><tbody>';
@@ -966,7 +907,6 @@ function renderPiutangTable() {
       html += `<td><input type="number" id="edit-piutang-${realIndex}-nominal" value="${row.nominal}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" oninput="updatePiutangSisaEdit(${realIndex})"></td>`;
       html += `<td><input type="number" id="edit-piutang-${realIndex}-terbayar" value="${row.terbayar}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" oninput="updatePiutangSisaEdit(${realIndex})"></td>`;
       html += `<td><input type="number" id="edit-piutang-${realIndex}-sisa" value="${row.sisa}" style="width:100%; min-width:80px; box-sizing:border-box; padding:4px; font-size:12px;" readonly></td>`;
-      html += `<td><input type="number" id="edit-piutang-${realIndex}-overD" value="${row.overD || 0}" style="width:100%; min-width:60px; box-sizing:border-box; padding:4px; font-size:12px;"></td>`;
       html += `<td>
         <select id="edit-piutang-${realIndex}-status" style="width:100%; min-width:90px; box-sizing:border-box; padding:4px; font-size:12px;">
           <option value="Belum Lunas" ${row.status === 'Belum Lunas' ? 'selected' : ''}>Belum Lunas</option>
@@ -982,14 +922,6 @@ function renderPiutangTable() {
       html += `<td>Rp ${(parseInt(row.nominal) || 0).toLocaleString('id-ID')}</td>`;
       html += `<td>Rp ${(parseInt(row.terbayar) || 0).toLocaleString('id-ID')}</td>`;
       html += `<td style="color:${(parseInt(row.sisa) || 0) > 0 ? '#dc3545' : '#28a745'}; font-weight:bold;">Rp ${(parseInt(row.sisa) || 0).toLocaleString('id-ID')}</td>`;
-      
-      // Menampilkan kolom Overdue (Sisa hari)
-      let overDays = parseInt(row.overD) || 0;
-      if (overDays > 0 && row.status !== 'Lunas') {
-        html += `<td style="color:#dc3545; font-weight:bold;">${overDays} Hari</td>`;
-      } else {
-        html += `<td style="color:#999;">-</td>`;
-      }
       
       let statusColor = '#6c757d';
       if (row.status === 'Lunas') statusColor = '#28a745';
@@ -1021,15 +953,11 @@ function updatePiutangSisaEdit(idx) {
   document.getElementById(`edit-piutang-${idx}-sisa`).value = sisaVal;
   
   let statusSel = document.getElementById(`edit-piutang-${idx}-status`);
-  let overDInput = document.getElementById(`edit-piutang-${idx}-overD`);
-  
   if (sisaVal <= 0) {
     statusSel.value = 'Lunas';
-    if (overDInput) overDInput.value = 0;
   } else {
     if (statusSel.value === 'Lunas') {
-      let days = parseInt(overDInput ? overDInput.value : 0) || 0;
-      statusSel.value = days > 0 ? 'Jatuh Tempo' : 'Belum Lunas';
+      statusSel.value = 'Belum Lunas';
     }
   }
 }
@@ -1052,19 +980,15 @@ function simpanRowPiutang(idx) {
   let nominal = parseInt(document.getElementById(`edit-piutang-${idx}-nominal`).value) || 0;
   let terbayar = parseInt(document.getElementById(`edit-piutang-${idx}-terbayar`).value) || 0;
   let sisa = nominal - terbayar;
-  let overD = parseInt(document.getElementById(`edit-piutang-${idx}-overD`).value) || 0;
   let status = document.getElementById(`edit-piutang-${idx}-status`).value;
   
-  dataPiutang[idx] = { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, overD, status };
+  dataPiutang[idx] = { customer, tanggal, invoice, jatuhTempo, nominal, terbayar, sisa, status };
   localStorage.setItem('piutang_data', JSON.stringify(dataPiutang));
   
   editingRowPiutang = null;
   showNotification('Perubahan data piutang berhasil disimpan!', 'success');
   hitungDanTampilPiutang();
   renderPiutangTable();
-  
-  // AUTO-SYNC: Update otomatis ke cloud pasca-pengeditan
-  pushKeCloud(true);
 }
 
 function hapusRowPiutang(idx) {
@@ -1074,9 +998,6 @@ function hapusRowPiutang(idx) {
     showNotification('Data piutang berhasil dihapus.', 'success');
     hitungDanTampilPiutang();
     renderPiutangTable();
-    
-    // AUTO-SYNC: Update ke cloud pasca-hapus
-    pushKeCloud(true);
   });
 }
 
@@ -1238,9 +1159,6 @@ function simpanRow(rowIndex){
   hitungDanTampil(dataGlobal);
   renderDataTable();
   showNotification('Perubahan data berhasil disimpan!', 'success');
-  
-  // AUTO-SYNC: Update cloud setelah data diedit
-  pushKeCloud(true);
 }
 
 function hapusRow(rowIndex){
@@ -1251,9 +1169,6 @@ function hapusRow(rowIndex){
     hitungDanTampil(dataGlobal);
     renderDataTable();
     showNotification('Data penjualan berhasil dihapus.', 'success');
-    
-    // AUTO-SYNC: Update cloud setelah data dihapus
-    pushKeCloud(true);
   });
 }
 
@@ -1268,58 +1183,52 @@ function simpanCloudUrl() {
   let url = document.getElementById('cloudUrlInput').value.trim();
   localStorage.setItem('cloudApiUrl', url);
   showNotification('URL Database Cloud berhasil disimpan!', 'success');
-  
-  // Langsung push saat pertama kali URL disimpan
-  pushKeCloud(true);
 }
 
-// parameter silent: jika true, upload diam-diam tanpa merusak UX
 async function pushKeCloud(silent = false) {
   let url = localStorage.getItem('cloudApiUrl');
-  if(!url) {
-    if(!silent) showNotification('Silakan isi dan simpan URL Cloud API terlebih dahulu!', 'error');
-    return;
-  }
+  if(!url) { alert('URL Cloud belum diset!'); return; }
   
-  let payload = {
-    penjualan: dataGlobal,
-    keuangan: dataStore,
-    piutang: dataPiutang
-  };
-  
-  if(!silent) showNotification('Sedang mencadangkan data ke Cloud...', 'info');
-  updateSyncStatus('Sinkronisasi...', '#ffc107');
+  if(!silent) updateSyncStatus('Mengunggah...');
   
   try {
-    let response = await fetch(url, {
+    await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(dataGlobal)
     });
-    if(response.ok) {
-      if(!silent) showNotification('Sinkronisasi Berhasil! Data Anda aman di Cloud Google Sheets.', 'success');
-      updateSyncStatus('Tersinkronisasi', '#28a745');
-      setTimeout(resetSyncStatus, 5000);
-    } else {
-      if(!silent) showNotification('Gagal mencadangkan data. Pastikan URL Apps Script benar.', 'error');
-      updateSyncStatus('Gagal Sinkronisasi', '#dc3545');
-    }
-  } catch(err) {
-    if(!silent) showNotification('Gagal sinkronisasi: ' + err.message, 'error');
-    updateSyncStatus('Offline', '#dc3545');
+    if(!silent) showNotification('Data berhasil di-upload ke Cloud!', 'success');
+  } catch(e) {
+    if(!silent) showNotification('Gagal upload: ' + e.message, 'error');
   }
+  resetSyncStatus();
 }
 
-// parameter silent: jika true, loading diam-diam tanpa mengganggu visual
 async function pullDariCloud(silent = false) {
   let url = localStorage.getItem('cloudApiUrl');
+  if(!url) return;
+  
+  if(!silent) updateSyncStatus('Mengunduh...');
+  
+  try {
+    let response = await fetch(url);
+    let data = await response.json();
+    dataGlobal = data;
+    localStorage.setItem('penjualan', JSON.stringify(dataGlobal));
+    if(!silent) showNotification('Data berhasil di-update dari Cloud!', 'success');
+    renderDataTable(); // Refresh tampilan
+  } catch(e) {
+    if(!silent) showNotification('Gagal download: ' + e.message, 'error');
+  }
+  resetSyncStatus();
+}
+async function pullDariCloud() {
+  let url = localStorage.getItem('cloudApiUrl');
   if(!url) {
-    if(!silent) showNotification('Silakan isi dan simpan URL Cloud API terlebih dahulu!', 'error');
+    showNotification('Silakan isi dan simpan URL Cloud API terlebih dahulu!', 'error');
     return;
   }
   
-  if(!silent) showNotification('Sedang mengunduh data terbaru...', 'info');
-  updateSyncStatus('Mengunduh Data...', '#ffc107');
-  
+  showNotification('Sedang mengunduh data terbaru...', 'info');
   try {
     let response = await fetch(url);
     if(response.ok) {
@@ -1337,21 +1246,13 @@ async function pullDariCloud(silent = false) {
         localStorage.setItem('piutang_data', JSON.stringify(dataPiutang));
       }
       
-      if(!silent) showNotification('Data berhasil diperbarui dari Cloud Database!', 'success');
-      updateSyncStatus('Tersinkronisasi', '#28a745');
-      setTimeout(resetSyncStatus, 5000);
-      
-      // Update data di layar aktif saat ini
+      showNotification('Data berhasil diperbarui dari Cloud Database!', 'success');
       isiDropdownFilter();
-      hitungDanTampil(dataGlobal);
-      hitungDanTampilPiutang();
     } else {
-      if(!silent) showNotification('Gagal mengunduh data. Pastikan URL Apps Script benar.', 'error');
-      updateSyncStatus('Gagal Memuat', '#dc3545');
+      showNotification('Gagal mengunduh data. Pastikan URL Apps Script benar.', 'error');
     }
   } catch(err) {
-    if(!silent) showNotification('Gagal memuat data: ' + err.message, 'error');
-    updateSyncStatus('Offline', '#dc3545');
+    showNotification('Gagal memuat data: ' + err.message, 'error');
   }
 }
 
