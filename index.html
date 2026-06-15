@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 
-<!-- FIX REFRESH 404 GITHUB PAGES -->
+<!-- FIX REFRESH 404 + MASUK BUTTON -->
 <script>
 (function(l) {
   if (l.search[1] === '/') {
@@ -15,6 +15,13 @@
     window.history.replaceState(null, null,
       l.pathname.slice(0, -1) + decoded + l.hash
     );
+  }
+  // Auto buka dashboard kalau ada data di localStorage
+  if(localStorage.getItem('penjualan')){
+    window.addEventListener('load', function(){
+      document.getElementById('landing').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+    });
   }
 }(window.location))
 </script>
@@ -115,11 +122,11 @@ tr:hover td{background:#f8f9fa}
 
 /* MEDIA QUERIES UNTUK TAMPILAN HP */
 @media (max-width: 768px) {
- .menu-btn {
+.menu-btn {
     display: block;
   }
 
- .sidebar {
+.sidebar {
     position: fixed;
     top: 50px;
     left: 0;
@@ -128,33 +135,33 @@ tr:hover td{background:#f8f9fa}
     box-shadow: 2px 0 8px rgba(0,0,0,0.15);
   }
 
- .sidebar.open {
+.sidebar.open {
     transform: translateX(0);
   }
 
- .sidebar-overlay.show {
+.sidebar-overlay.show {
     display: block;
   }
 
- .content {
+.content {
     padding: 12px;
   }
 
- .ringkasan {
+.ringkasan {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
- .box-container {
+.box-container {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
- .box {
+.box {
     min-height: auto;
   }
 
- .editing input,.editing select {
+.editing input,.editing select {
     min-width: 80px;
   }
 }
@@ -233,6 +240,14 @@ const pages = {
         <h4>Saldo Akhir</h4>
         <div id="boxSaldoAkhir"><p style="color:#666">Belum ada data</p></div>
         <p style="margin-top:10px"><b>Total Saldo Akhir : <span id="totalSaldoAkhir">Rp 0</span></b></p>
+      </div>
+      <div class="table-wrap">
+        <h4>Total Uang Masuk Bulan</h4>
+        <div id="boxPemasukan"><p style="color:#666">Belum ada data</p></div>
+        <p style="margin-top:10px;font-size:13px">
+          <b>Dari Penjualan Cash : <span id="totalPemasukanCash">Rp 0</span></b><br>
+          <b>Dari Pembayaran Piutang : <span id="totalPemasukanPiutang">Rp 0</span></b>
+        </p>
       </div>
     </div>
     <div class="table-wrap" id="boxRumusKas" style="border:2px solid #004aad;padding:15px;line-height:1.8">
@@ -581,6 +596,20 @@ function renderKeuangan(){
   let kasAkhir = totalAwal + totalMasuk - totalKeluar;
   let totalAkhir = sumColumn(dataStore.saldoAkhir);
 
+  // Hitung total pemasukan cash dan piutang
+  let totalCash = 0, totalPiutang = 0;
+  if(dataStore.pemasukan.length){
+    dataStore.pemasukan.forEach(row=>{
+      let cash = parseInt(String(row['Uang Msuk Dari Penjualan Cash'] || row['Uang Masuk Dari Penjualan Cash'] || '').replace(/[^0-9]/g,'')) || 0;
+      let piutang = parseInt(String(row['Uang Masuk Dari Pembayaran Piutang'] || '').replace(/[^0-9]/g,'')) || 0;
+      totalCash += cash;
+      totalPiutang += piutang;
+    });
+    document.getElementById('boxPemasukan').innerHTML = makeTable(dataStore.pemasukan);
+  }
+  document.getElementById('totalPemasukanCash').innerText = 'Rp ' + totalCash.toLocaleString('id-ID');
+  document.getElementById('totalPemasukanPiutang').innerText = 'Rp ' + totalPiutang.toLocaleString('id-ID');
+
   if(dataStore.saldoAwal.length){
     document.getElementById('boxSaldoAwal').innerHTML = makeTable(dataStore.saldoAwal);
     document.getElementById('totalSaldoAwal').innerText = 'Rp ' + totalAwal.toLocaleString('id-ID');
@@ -595,41 +624,4 @@ function renderKeuangan(){
     Rp ${totalAwal.toLocaleString('id-ID')} + Rp ${totalMasuk.toLocaleString('id-ID')} = Rp ${(totalAwal+totalMasuk).toLocaleString('id-ID')}</div>
     <div style="margin-top:12px"><b>Total Pengeluaran</b><br>
     Rp ${totalKeluar.toLocaleString('id-ID')}</div>
-    <div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>
-    Rp ${kasAkhir.toLocaleString('id-ID')}</div>
-  `;
-}
-
-function makeTable(arr){
-  if(!arr.length) return '<p style="color:#666">Belum ada data</p>';
-  let cols = Object.keys(arr[0]).filter(c =>!c.toUpperCase().includes('__EMPTY') && c.trim()!== '');
-  let html = '<div class="table-scroll"><table class="table-kas"><thead><tr>';
-  cols.forEach(c=>html+='<th>'+c+'</th>');
-  html+='</tr></thead><tbody>';
-  arr.forEach(r=>{
-    html+='<tr>';
-    cols.forEach(c=>{
-      let val = r[c];
-      if(val === null || val === undefined || val === '') val = '-';
-      else if(typeof val === 'string') val = val.replace(/^"|"$/g,'').trim();
-      if(val === '000' || val === '0') val = '-';
-      else if(!c.toLowerCase().includes('tanggal')){
-        let num = parseInt(String(val).replace(/[^0-9]/g,''));
-        if(!isNaN(num) && num > 0) val = 'Rp ' + num.toLocaleString('id-ID');
-        else if(num === 0) val = '-';
-      }
-      html+='<td>'+val+'</td>';
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-  return html;
-}
-
-function sumColumn(arr){
-  if(!arr.length) return 0;
-  let total = 0;
-  arr.forEach(row=>{
-    Object.keys(row).forEach(key=>{
-      if(key.toLowerCase().includes('tanggal') || key.toUpperCase().includes('__EMPTY')) return;
-      let val = String(row[key] || '').replace(/[^0-
+    <
