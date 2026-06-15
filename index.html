@@ -425,6 +425,8 @@ function parseHutangExcelData(rows){
 
 function renderHutang(){
   if(!document.getElementById('hutangTableScroll'))return;
+  // Load ulang dari localStorage biar nggak hilang
+  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
   dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
   let today=new Date();let thisMonth=today.getMonth();let nextMonth=thisMonth===11?0:thisMonth+1;let thisYear=today.getFullYear();
   let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
