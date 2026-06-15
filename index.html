@@ -1,93 +1,74 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>CV Gajah Mas</title>
-<style>
-  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; }
-  .header { background: #004aad; color: #fff; padding: 15px 20px; font-weight: bold; }
-  .layout { display: flex; height: calc(100vh - 50px); }
-  .sidebar { width: 220px; background: #fff; border-right: 1px solid #ddd; padding-top: 10px; }
-  .menu-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #eee; }
-  .menu-item:hover { background: #eef; color: #004aad; }
-  .menu-item.active { background: #004aad; color: #fff; }
-  .content { flex: 1; padding: 25px; overflow-y: auto; }
-  .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; }
-  th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-  th { background: #004aad; color: #fff; }
-</style>
-</head>
-<body>
-
-<div class="header">GAJAH MAS</div>
-<div class="layout">
-  <div class="sidebar">
-    <div class="menu-item" onclick="loadPage('ringkasan', this)">Ringkasan Penjualan</div>
-    <div class="menu-item" onclick="loadPage('datatable', this)">Data Penjualan</div>
-    <div class="menu-item" onclick="loadPage('hutang', this)">Hutang Dagang</div>
-  </div>
-  <div class="content" id="mainContent">
-    <h3>Selamat Datang</h3>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script>
-// FUNGSI UTAMA
-function excelDateToJSDate(serial) {
-   let utc_days  = Math.floor(serial - 25569);
-   let utc_value = utc_days * 86400;                                        
-   let date_info = new Date(utc_value * 1000);
-   return date_info;
-}
-
-function loadPage(id, el) {
-  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-  el.classList.add('active');
-  const container = document.getElementById('mainContent');
+function parsePiutangExcelData(rawRows) {
+  if (!rawRows || rawRows.length === 0) return [];
   
-  if(id === 'hutang') {
-    container.innerHTML = `<h3>Data Hutang Dagang</h3><div id="summary" style="display:flex; gap:15px;"></div><input type="file" onchange="prosesHutang(event)" style="margin:20px 0;"><div id="tableArea"></div>`;
-    let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
-    if(data.length > 0) renderHutang(data);
-  } else {
-    // Ini mengembalikan tampilan asli Anda untuk menu lain
-    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Halaman ${id} sedang aktif.</p>`;
-  }
+  // Deteksi kolom otomatis berdasarkan nama header yang mirip
+  let keys = Object.keys(rawRows[0]);
+  let find = (syns) => keys.find(k => syns.some(s => k.toLowerCase().includes(s))) || keys[0];
+
+  let kCust = find(['cust', 'nama', 'toko', 'pelanggan']);
+  let kTgl = find(['tanggal', 'tgl']);
+  let kNom = find(['nominal', 'total', 'jumlah']);
+  let kBay = find(['bayar', 'terbayar', 'pembayaran']);
+  let kStat = find(['status', 'ket']);
+
+  return rawRows.map(row => ({
+    customer: row[kCust] || '-',
+    tanggal: row[kTgl] || '-',
+    nominal: parseFloat(String(row[kNom]).replace(/[^0-9]/g, '')) || 0,
+    terbayar: parseFloat(String(row[kBay]).replace(/[^0-9]/g, '')) || 0,
+    status: row[kStat] || 'Belum Lunas'
+  }));
 }
 
-function prosesHutang(e) {
+function uploadPiutangExcel() {
+  let file = document.getElementById('piutangFile').files[0];
+  if(!file) return;
+
   let reader = new FileReader();
-  reader.onload = function(evt) {
-    let wb = XLSX.read(evt.target.result, {type: 'binary'});
-    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    localStorage.setItem('data_hutang', JSON.stringify(data));
-    renderHutang(data);
+  reader.onload = function(e) {
+    let workbook = XLSX.read(e.target.result, {type: 'binary'});
+    let data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    let processed = parsePiutangExcelData(data);
+    
+    localStorage.setItem('piutang_data', JSON.stringify(processed));
+    dataPiutang = processed;
+    
+    showNotification('Piutang berhasil diperbarui!', 'success');
+    resetPiutangUploadForm();
+    hitungDanTampilPiutang();
+    renderPiutangTable();
   };
-  reader.readAsBinaryString(e.target.files[0]);
+  reader.readAsBinaryString(file);
 }
 
-function renderHutang(data) {
-  let now = new Date();
-  let mIni = {bayar:0, sisa:0}, mDepan = {bayar:0, sisa:0};
-  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+function hitungDanTampilPiutang() {
+  let totalNominal = dataPiutang.reduce((sum, item) => sum + item.nominal, 0);
+  let totalTerbayar = dataPiutang.reduce((sum, item) => sum + item.terbayar, 0);
   
-  data.forEach(r => {
-    let d = typeof r['Tanggal'] === 'number' ? excelDateToJSDate(r['Tanggal']) : new Date(r['Tanggal']);
-    let nom = parseFloat(String(r['Nominal']).replace(/[^0-9.-]+/g,"")||0);
-    let bay = parseFloat(String(r['Pembayaran']).replace(/[^0-9.-]+/g,"")||0);
-    let sisa = nom - bay;
-
-    if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) { mIni.bayar += bay; mIni.sisa += sisa; }
-    if(d.getMonth() === now.getMonth()+1 && d.getFullYear() === now.getFullYear()) { mDepan.bayar += bay; mDepan.sisa += sisa; }
-
-    html += `<tr><td>${d.toLocaleDateString()}</td><td>${r['Suplier']}</td><td>${nom.toLocaleString()}</td><td>${bay.toLocaleString()}</td><td>${sisa.toLocaleString()}</td></tr>`;
-  });
-
-  document.getElementById('summary').innerHTML = `<div class="card"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar.toLocaleString()}<br>Sisa: ${mIni.sisa.toLocaleString()}</div><div class="card"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar.toLocaleString()}<br>Sisa: ${mDepan.sisa.toLocaleString()}</div>`;
-  document.getElementById('tableArea').innerHTML = html + '</table>';
+  document.getElementById('lblTotalPiutang').innerText = 'Rp ' + totalNominal.toLocaleString('id-ID');
+  document.getElementById('lblTotalTerbayar').innerText = 'Rp ' + totalTerbayar.toLocaleString('id-ID');
+  document.getElementById('lblSisaPiutang').innerText = 'Rp ' + (totalNominal - totalTerbayar).toLocaleString('id-ID');
 }
-</script>
-</body>
-</html>
+
+function renderPiutangTable() {
+  let statusFilter = document.getElementById('filterStatusPiutang').value;
+  let filtered = statusFilter ? dataPiutang.filter(i => i.status === statusFilter) : dataPiutang;
+  
+  let html = `<table><thead><tr><th>Customer</th><th>Tanggal</th><th>Nominal</th><th>Terbayar</th><th>Status</th></tr></thead><tbody>`;
+  filtered.forEach((r, idx) => {
+    html += `<tr>
+      <td>${r.customer}</td>
+      <td>${r.tanggal}</td>
+      <td>Rp ${r.nominal.toLocaleString('id-ID')}</td>
+      <td>Rp ${r.terbayar.toLocaleString('id-ID')}</td>
+      <td>${r.status}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('piutangTableScroll').innerHTML = html;
+}
+
+function resetPiutangFilter() {
+  document.getElementById('filterStatusPiutang').value = '';
+  renderPiutangTable();
+}
