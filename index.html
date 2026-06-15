@@ -16,13 +16,22 @@ body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 .menu-item:hover{background:#f0f5ff;color:#004aad}
 .menu-item.active{background:#004aad;color:#fff;font-weight:600}
 .submenu{display:none;padding-left:20px}.submenu.show{display:block}
-.content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto}
+.content{flex:1;padding:20px;background:#f5f7fa;overflow-y:auto;overflow-x:hidden}
 .landing{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#004aad,#0066cc)}
-.landing button{padding:15px 40px;font-size:16px;border:0;border-radius:8px;background:#d4af37;color:#000;cursor:pointer;font-weight:700}
+.landing button{padding:15px 40px;font-size:16px;border:0;border-radius:8px;background:#d4af37;color:#000;cursor:pointer;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
 .table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.table-wrap h4{margin:0 0 12px 0;color:#004aad;font-size:14px;font-weight:700;text-transform:uppercase}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left}
-td{padding:8px;border-bottom:1px solid #eee}
+th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left;font-weight:700;font-size:12px;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+.table-kas th, .table-kas td {white-space:nowrap}
+.table-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
+.filter-bar{margin-bottom:15px;display:flex;gap:10px;flex-wrap:wrap}
+.filter-bar select,.filter-bar button{padding:6px 12px;border:1px solid #ccc;border-radius:5px;font-size:13px}
+.filter-bar button{background:#004aad;color:#fff;border:0;cursor:pointer}
+.btn-aksi{padding:5px 12px;border:0;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:4px}
+.btn-simpan{background:#28a745;color:#fff}
+.btn-batal{background:#6c757d;color:#fff}
 @media (max-width: 768px) { .menu-btn{display:block} .sidebar{position:fixed;top:50px;left:0;height:calc(100vh - 50px);transform:translateX(-100%)} .sidebar.open{transform:translateX(0)} }
 </style>
 </head>
@@ -43,16 +52,23 @@ td{padding:8px;border-bottom:1px solid #eee}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+let dataGlobal = JSON.parse(localStorage.getItem('penjualan')||'[]');
+let dataPiutang = JSON.parse(localStorage.getItem('piutang_data')||'[]');
+
 const pages = {
   kas: `<h3>Kas</h3>`,
   ringkasan: `<h3>Ringkasan</h3>`,
-  datatable: `<h3>Data Penjualan</h3>`,
-  piutang: `<h3>Piutang</h3>`,
-  hutang: `
+  piutang: `
+    <h3>Piutang Dagang</h3>
     <div class="table-wrap">
-      <h3>Data Hutang Dagang</h3>
-      <input type="file" id="fileHutang" accept=".xlsx, .xls" onchange="prosesHutang(event)" style="margin-bottom:20px;">
-      <div id="tableAreaHutang"><p>Silakan upload file Excel hutang.</p></div>
+      <div id="piutangTableScroll">Data Piutang...</div>
+      <input type="file" id="piutangFile" accept=".xlsx, .xls" onchange="uploadPiutangExcel()" style="margin-top:10px;">
+    </div>
+  `,
+  hutang: `
+    <h3>Hutang Dagang</h3>
+    <div class="table-wrap">
+      <p>Fitur Hutang aktif. Silakan unggah file Excel Anda.</p>
     </div>
   `
 };
@@ -65,41 +81,38 @@ function masuk(){
 }
 
 function buildMenu(){
-  let html = ['kas', 'ringkasan', 'datatable', 'piutang', 'hutang'].map(id => 
+  let menu = ['kas', 'ringkasan', 'piutang', 'hutang'];
+  document.getElementById('menuContainer').innerHTML = menu.map(id => 
     `<div class="menu-item" onclick="show('${id}')">${id.charAt(0).toUpperCase() + id.slice(1)}</div>`
   ).join('');
-  document.getElementById('menuContainer').innerHTML = html;
 }
 
 function show(id){
   document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
-  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  if(id === 'piutang') renderPiutangTable();
 }
 
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
-// Logika khusus Hutang
-function prosesHutang(e) {
-  let file = e.target.files[0];
-  let reader = new FileReader();
-  reader.onload = function(evt) {
-    let wb = XLSX.read(evt.target.result, {type: 'binary'});
-    let data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    renderHutang(data);
-  };
-  reader.readAsBinaryString(file);
+function renderPiutangTable() {
+    let html = '<table class="table-kas"><tr><th>Customer</th><th>Sisa</th></tr>';
+    dataPiutang.forEach(r => {
+        html += `<tr><td>${r.customer||'-'}</td><td>Rp ${(r.sisa||0).toLocaleString()}</td></tr>`;
+    });
+    document.getElementById('piutangTableScroll').innerHTML = html + '</table>';
 }
 
-function renderHutang(data) {
-  const clean = (val) => parseFloat(String(val).replace(/[^0-9]/g, '')) || 0;
-  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
-  data.forEach(r => {
-    let nom = clean(r['Nominal']);
-    let bay = clean(r['Pembayaran']);
-    let sisa = nom - bay;
-    html += `<tr><td>${r['Tanggal']||'-'}</td><td>${r['Suplier']||'-'}</td><td>Rp ${nom.toLocaleString()}</td><td>Rp ${bay.toLocaleString()}</td><td>Rp ${sisa.toLocaleString()}</td></tr>`;
-  });
-  document.getElementById('tableAreaHutang').innerHTML = html + '</table>';
+function uploadPiutangExcel() {
+  let file = document.getElementById('piutangFile').files[0];
+  let reader = new FileReader();
+  reader.onload = e => {
+    let wb = XLSX.read(e.target.result, {type: 'binary'});
+    let json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    dataPiutang = json; // Sesuaikan dengan struktur data Anda
+    localStorage.setItem('piutang_data', JSON.stringify(dataPiutang));
+    renderPiutangTable();
+  };
+  reader.readAsBinaryString(file);
 }
 </script>
 </body>
