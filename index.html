@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <script>
+<script>
 (function(){
 var redirect = sessionStorage.redirect;
 delete sessionStorage.redirect;
@@ -10,6 +10,7 @@ history.replaceState(null, null, redirect);
 }
 })();
 </script>
+<base href="/GajahMas_app1/">
 <meta charset="UTF-8">
 <title>Gajah Mas App</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
