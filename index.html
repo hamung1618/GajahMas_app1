@@ -248,6 +248,11 @@ function sumColumn(arr,key='Nominal'){
 }
 
 function renderKeuangan(){
+  // Load ulang dari localStorage biar nggak hilang pas pindah menu
+  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>{
+    dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]');
+  });
+
   let totalAwal=sumColumn(dataStore.saldoAwal);
   let totalMasuk=sumColumn(dataStore.pemasukan);
   let totalKeluar=sumColumn(dataStore.pengeluaran);
