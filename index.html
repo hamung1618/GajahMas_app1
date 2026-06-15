@@ -25,10 +25,12 @@ body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#004aad;color:#d4af37;padding:10px 8px;text-align:left;font-weight:700;font-size:12px;white-space:nowrap}
 td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-.ringkasan{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:25px;font-size:13px}
-.ringkasan b{color:#004aad;font-size:14px}
+.ringkasan{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:25px;font-size:13px}
+.ringkasan b{font-size:16px}
 .box-container{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:25px;width:100%}
 .box{border:2px solid #ddd;border-radius:12px;padding:15px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,0.05);min-height:160px}
+.box h3{margin:0 0 12px 0;color:#004aad;font-size:15px;font-weight:700;text-transform:uppercase}
+.table-scroll{overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch}
 .btn-aksi{padding:5px 12px;border:0;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:4px;white-space:nowrap}
 .btn-edit{background:#ffc107;color:#000}
 .btn-hapus{background:#dc3545;color:#fff}
@@ -44,6 +46,7 @@ td{padding:8px;border-bottom:1px solid #eee;text-align:left}
 .content{padding:12px}
 .ringkasan{grid-template-columns:1fr;gap:12px}
 .box-container{grid-template-columns:1fr;gap:12px}
+.editing input,.editing select{min-width:80px}
 </style>
 </head>
 <body>
@@ -84,7 +87,6 @@ function masuk(){
 }
 
 let dataGlobal=[],dataHutang=[],editingRowHutang=null;
-let dataStore={saldoAwal:[],pemasukan:[],pengeluaran:[],saldoAkhir:[]};
 
 function toggleSidebar(){
   const sidebar=document.getElementById('sidebar');
@@ -97,10 +99,10 @@ const pages={
   hutang:`<div class="table-wrap" style="margin-bottom:15px"><h3>Sistem Kelola Hutang Dagang</h3>
     <p style="font-size:13px;color:#666;margin:0">Upload file: Tanggal, Supplier, Nominal, Pembayaran</p></div>
   <div class="ringkasan" style="margin-bottom:15px">
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Tagihan Bulan Ini : <b id="lblTagihanBulanIni" style="font-size:16px;color:#dc3545">Rp 0</b></div>
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Sudah Bayar Bulan Ini : <b id="lblBayarBulanIni" style="font-size:16px;color:#28a745">Rp 0</b></div>
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Belum Bayar Bulan Ini : <b id="lblSisaBulanIni" style="font-size:16px;color:#fd7e14">Rp 0</b></div>
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Tagihan Bulan Depan : <b id="lblTagihanBulanDepan" style="font-size:16px;color:#004aad">Rp 0</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Tagihan Bulan Ini : <b id="lblTagihanBulanIni" style="color:#dc3545">Rp 0</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Sudah Bayar Bulan Ini : <b id="lblBayarBulanIni" style="color:#28a745">Rp 0</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Belum Bayar Bulan Ini : <b id="lblSisaBulanIni" style="color:#fd7e14">Rp 0</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Tagihan Bulan Depan : <b id="lblTagihanBulanDepan" style="color:#004aad">Rp 0</b></div>
   </div>
   <div class="table-wrap"><div class="table-scroll" id="hutangTableScroll"><p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang</p></div></div>
   <div class="table-wrap" style="padding:12px 18px;background:#fafbfc;border-top:2px solid #004aad">
@@ -108,18 +110,14 @@ const pages={
     <button class="btn-aksi btn-simpan" onclick="document.getElementById('hutangFile').click()">📎 Pilih File Hutang</button>
     <div id="uploadStatusMsgHutang" style="margin-top:8px"></div></div>`,
 
-  ringkasan:`<div class="ringkasan">
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Bulan : <b id="penjualanBulan">-</b><br>Profit Bulan : <b id="profitBulan">-</b></div>
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Tunai : <b id="penjualanTunai">-</b><br>Profit Tunai : <b id="profitTunai">-</b></div>
-    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Tempo : <b id="penjualanTempo">-</b><br>Profit Tempo : <b id="profitTempo">-</b></div>
+  ringkasan:`<div class="ringkasan" style="grid-template-columns:repeat(3,1fr)">
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Bulan : <b id="penjualanBulan" style="color:#004aad">-</b><br>Profit Bulan : <b id="profitBulan" style="color:#004aad">-</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Tunai : <b id="penjualanTunai" style="color:#004aad">-</b><br>Profit Tunai : <b id="profitTunai" style="color:#004aad">-</b></div>
+    <div style="background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">Penjualan Tempo : <b id="penjualanTempo" style="color:#004aad">-</b><br>Profit Tempo : <b id="profitTempo" style="color:#004aad">-</b></div>
   </div><div class="box-container" id="boxSales"></div><div class="table-wrap"><h3>Rincian Penjualan Per Sales</h3><div class="table-scroll" id="tableSales"></div></div>`,
 
-  kas:`<h3>Kas</h3>`,
-  stok:`<h3>Stok Barang</h3>`,
-  customer:`<h3>Customer</h3>`,
-  supplier:`<h3>Supplier</h3>`,
-  karyawan:`<h3>Data Karyawan</h3>`,
-  aset:`<h3>Data Aset</h3>`,
+  kas:`<h3>Kas</h3>`,stok:`<h3>Stok Barang</h3>`,customer:`<h3>Customer</h3>`,
+  supplier:`<h3>Supplier</h3>`,karyawan:`<h3>Data Karyawan</h3>`,aset:`<h3>Data Aset</h3>`,
   upload_penjualan:`<div class="table-wrap"><h3>Upload Data Penjualan</h3><input type="file" id="csvFile" accept=".csv,.xlsx,.xls" onchange="uploadCSV()"><div id="uploadStatusMsg"></div></div>`
 };
 
@@ -143,24 +141,176 @@ function show(id){
   setTimeout(()=>{if(id==='ringkasan')hitungDanTampil(dataGlobal);if(id==='hutang'){hitungRingkasanHutang();renderHutangTable();}},100);
 }
 
-let confirmCallback=null;function showConfirmModal(text,cb){document.getElementById('confirmModalText').innerText=text;document.getElementById('confirmModal').style.display='flex';confirmCallback=cb;}function closeConfirmModal(){document.getElementById('confirmModal').style.display='none';confirmCallback=null;}document.getElementById('confirmYesBtn').onclick=function(){if(confirmCallback)confirmCallback();closeConfirmModal();};
+let confirmCallback=null;
+function showConfirmModal(text,cb){document.getElementById('confirmModalText').innerText=text;document.getElementById('confirmModal').style.display='flex';confirmCallback=cb;}
+function closeConfirmModal(){document.getElementById('confirmModal').style.display='none';confirmCallback=null;}
+document.getElementById('confirmYesBtn').onclick=function(){if(confirmCallback)confirmCallback();closeConfirmModal();};
 
-// Fungsi Penjualan
-function uploadCSV(){let file=document.getElementById('csvFile').files[0];if(!file)return;let reader=new FileReader();reader.onload=function(e){try{let parsed=[];if(file.name.endsWith('.csv')){let lines=e.target.result.split('\n');for(let i=1;i<lines.length;i++)if(lines[i].trim())parsed.push(lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,'')));}else{let wb=XLSX.read(e.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""}).slice(1);}dataGlobal=parsed.filter(r=>r&&r[0]).map(r=>{let nr=[];for(let j=0;j<12;j++)nr.push(r[j]?String(r[j]).trim():"");return nr;});localStorage.setItem('penjualan',JSON.stringify(dataGlobal));}catch(err){console.log(err);}};file.name.endsWith('.csv')?reader.readAsText(file):reader.readAsBinaryString(file);}
-function hitungDanTampil(rows){let total=0,profit=0,tunai=0,profitTunai=0,tempo=0,profitTempo=0;rows.forEach(r=>{let nom=parseInt(r[9])||0,prof=parseInt(r[11])||0;total+=nom;profit+=prof;if(r[10]&&r[10].toLowerCase().includes('cash')){tunai+=nom;profitTunai+=prof;}else{tempo+=nom;profitTempo+=prof;}});if(document.getElementById('penjualanBulan'))document.getElementById('penjualanBulan').innerText=rows.length?'Rp '+total.toLocaleString('id'):'-';if(document.getElementById('profitBulan'))document.getElementById('profitBulan').innerText=rows.length?'Rp '+profit.toLocaleString('id'):'-';if(document.getElementById('penjualanTunai'))document.getElementById('penjualanTunai').innerText=rows.length?'Rp '+tunai.toLocaleString('id'):'-';if(document.getElementById('profitTunai'))document.getElementById('profitTunai').innerText=rows.length?'Rp '+profitTunai.toLocaleString('id'):'-';if(document.getElementById('penjualanTempo'))document.getElementById('penjualanTempo').innerText=rows.length?'Rp '+tempo.toLocaleString('id'):'-';if(document.getElementById('profitTempo'))document.getElementById('profitTempo').innerText=rows.length?'Rp '+profitTempo.toLocaleString('id'):'-';tampilBoxSales(rows);tampilTableSales(rows);}
-function tampilBoxSales(rows){if(!document.getElementById('boxSales'))return;let sales={};rows.forEach(r=>{if(!r[0])return;let nama=r[0].trim().toUpperCase();if(!sales[nama])sales[nama]={cash:0,tempo:0,profitCash:0,profitTempo:0};let nominal=parseInt(r[9])||0,profit=parseInt(r[11])||0;if(r[10]&&r[10].toLowerCase().includes('cash')){sales[nama].cash+=nominal;sales[nama].profitCash+=profit;}else{sales[nama].tempo+=nominal;sales[nama].profitTempo+=profit;}});let html='';Object.keys(sales).sort().forEach(nama=>{let s=sales[nama];html+=`<div class="box"><h3>${nama}</h3><p><b>Penjualan</b>Cash : Rp ${s.cash.toLocaleString('id')}<br>Tempo : Rp ${s.tempo.toLocaleString('id')}</p><p><b>Profit</b>Cash : Rp ${s.profitCash.toLocaleString('id')}<br>Tempo : Rp ${s.profitTempo.toLocaleString('id')}</p></div>`;});if(!html)html='<div class="box"><h3>RAJU</h3><p>Belum ada data</p></div><div class="box"><h3>HAFID</h3><p>Belum ada data</p></div><div class="box"><h3>JOSSY</h3><p>Belum ada data</p></div>';document.getElementById('boxSales').innerHTML=html;}
-function tampilTableSales(rows){if(!document.getElementById('tableSales'))return;let sales={};rows.forEach(r=>{if(!r[0])return;let nama=r[0].trim().toUpperCase();if(!sales[nama])sales[nama]={cash:0,tempo:0,profitCash:0,profitTempo:0};let nominal=parseInt(r[9])||0,profit=parseInt(r[11])||0;if(r[10]&&r[10].toLowerCase().includes('cash')){sales[nama].cash+=nominal;sales[nama].profitCash+=profit;}else{sales[nama].tempo+=nominal;sales[nama].profitTempo+=profit;}});let html='<table><tr><th>SALES</th><th>PENJUALAN CASH</th><th>PROFIT CASH</th><th>PENJUALAN TEMPO</th><th>PROFIT TEMPO</th><th>TOTAL PENJUALAN</th><th>TOTAL PROFIT</th></tr>';Object.keys(sales).sort().forEach(nama=>{let s=sales[nama];let totalJual=s.cash+s.tempo,totalProfit=s.profitCash+s.profitTempo;html+=`<tr><td><b>${nama}</b></td><td>Rp ${s.cash.toLocaleString('id')}</td><td>Rp ${s.profitCash.toLocaleString('id')}</td><td>Rp ${s.tempo.toLocaleString('id')}</td><td>Rp ${s.profitTempo.toLocaleString('id')}</td><td><b>Rp ${totalJual.toLocaleString('id')}</b></td><td><b>Rp ${totalProfit.toLocaleString('id')}</b></td></tr>`;});html+='</table>';if(!Object.keys(sales).length)html='<p style="color:#666">Belum ada data penjualan</p>';document.getElementById('tableSales').innerHTML=html;}
+// Parse tanggal Excel + format biasa
+function parseTanggal(tgl){
+  if(!tgl) return null;
+  if(!isNaN(tgl) && tgl > 1000){
+    let date = new Date(Math.round((tgl - 25569) * 86400 * 1000));
+    return date;
+  }
+  let parts = String(tgl).split(/[\/\-]/);
+  if(parts.length === 3){
+    let d = parseInt(parts[0]), m = parseInt(parts[1]) - 1, y = parseInt(parts[2]);
+    if(y < 100) y += 2000;
+    return new Date(y, m, d);
+  }
+  return new Date(tgl);
+}
 
-// Fungsi Hutang
-function parseTanggal(tgl){if(!tgl)return null;let parts=String(tgl).split(/[\/\-]/);if(parts.length===3){let d=parseInt(parts[0]),m=parseInt(parts[1])-1,y=parseInt(parts[2]);if(y<100)y+=2000;return new Date(y,m,d);}return new Date(tgl);}
-function uploadHutangExcel(input){let file=input.files[0];if(!file)return;let reader=new FileReader();reader.onload=function(e){try{let rows;if(file.name.endsWith('.csv')){let lines=e.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().toLowerCase());rows=lines.slice(1).filter(l=>l.trim()).map(l=>{let vals=l.split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');return obj;});}else{let wb=XLSX.read(e.target.result,{type:'binary'});rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}dataHutang=rows.map(r=>{let nominal=parseInt(String(r.Nominal||r.nominal||'0').replace(/[^0-9]/g,''))||0,bayar=parseInt(String(r.Pembayaran||r.pembayaran||r.Bayar||'0').replace(/[^0-9]/g,''))||0;return{tanggal:r.Tanggal||r.tanggal||'',supplier:r.Supplier||r.supplier||r.Suplier||'',nominal:nominal,bayar:bayar,sisa:nominal-bayar};});localStorage.setItem('hutang_data',JSON.stringify(dataHutang));hitungRingkasanHutang();renderHutangTable();document.getElementById('uploadStatusMsgHutang').innerHTML=`<div style="color:#137333;font-weight:600">✓ Berhasil load ${dataHutang.length} data hutang</div>`;}catch(err){console.log(err);}};file.name.endsWith('.csv')?reader.readAsText(file):reader.readAsBinaryString(file);}
-function hitungRingkasanHutang(){let now=new Date(),bulanIni=now.getMonth(),tahunIni=now.getFullYear(),bulanDepan=(bulanIni+1)%12,tahunDepan=bulanIni===11?tahunIni+1:tahunIni,tagihanIni=0,bayarIni=0,sisaIni=0,tagihanDepan=0;dataHutang.forEach(h=>{let tgl=parseTanggal(h.tanggal);if(!tgl)return;if(tgl.getMonth()===bulanIni&&tgl.getFullYear()===tahunIni){tagihanIni+=h.nominal;bayarIni+=h.bayar;sisaIni+=h.sisa;}if(tgl.getMonth()===bulanDepan&&tgl.getFullYear()===tahunDepan){tagihanDepan+=h.nominal;}});document.getElementById('lblTagihanBulanIni').innerText='Rp '+tagihanIni.toLocaleString('id');document.getElementById('lblBayarBulanIni').innerText='Rp '+bayarIni.toLocaleString('id');document.getElementById('lblSisaBulanIni').innerText='Rp '+sisaIni.toLocaleString('id');document.getElementById('lblTagihanBulanDepan').innerText='Rp '+tagihanDepan.toLocaleString('id');}
-function renderHutangTable(){if(!document.getElementById('hutangTableScroll'))return;if(dataHutang.length===0){document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px">Belum ada data hutang</p>';return;}let html='<table><tr><th>Tanggal</th><th>Supplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th><th>Aksi</th></tr>';dataHutang.forEach((h,i)=>{let isEdit=editingRowHutang===i;html+=`<tr class="${isEdit?'editing':''}">`;if(isEdit){html+=`<td><input type="text" id="edit-hutang-${i}-tgl" value="${h.tanggal}" style="width:100%;padding:4px;font-size:12px"></td><td><input type="text" id="edit-hutang-${i}-sup" value="${h.supplier}" style="width:100%;padding:4px;font-size:12px"></td><td><input type="number" id="edit-hutang-${i}-nom" value="${h.nominal}" style="width:100%;padding:4px;font-size:12px" oninput="updateSisaHutang(${i})"></td><td><input type="number" id="edit-hutang-${i}-bayar" value="${h.bayar}" style="width:100%;padding:4px;font-size:12px" oninput="updateSisaHutang(${i})"></td><td><input type="number" id="edit-hutang-${i}-sisa" value="${h.sisa}" readonly style="width:100%;padding:4px;font-size:12px;background:#f5f5f5"></td><td><button class="btn-aksi btn-simpan" onclick="simpanRowHutang(${i})">Simpan</button><button class="btn-aksi btn-batal" onclick="batalEditHutang()">Batal</button></td>`}else{html+=`<td>${h.tanggal}</td><td>${h.supplier}</td><td>Rp ${h.nominal.toLocaleString('id')}</td><td>Rp ${h.bayar.toLocaleString('id')}</td><td style="color:${h.sisa>0?'#dc3545':'#28a745'};font-weight:bold">Rp ${h.sisa.toLocaleString('id')}</td><td><button class="btn-aksi btn-edit" onclick="editRowHutang(${i})">Edit</button><button class="btn-aksi btn-hapus" onclick="hapusHutang(${i})">Hapus</button></td>`}html+=`</tr>`;});html+='</table>';document.getElementById('hutangTableScroll').innerHTML=html;}
-function updateSisaHutang(i){let nom=parseInt(document.getElementById(`edit-hutang-${i}-nom`).value)||0,bayar=parseInt(document.getElementById(`edit-hutang-${i}-bayar`).value)||0;document.getElementById(`edit-hutang-${i}-sisa`).value=nom-bayar;}
+// Upload Penjualan
+function uploadCSV(){
+  let file=document.getElementById('csvFile').files[0];
+  if(!file) return;
+  let reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let parsed=[];
+      if(file.name.endsWith('.csv')){
+        let lines=e.target.result.split('\n');
+        for(let i=1;i<lines.length;i++) if(lines[i].trim()) parsed.push(lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,'')));
+      }else{
+        let wb=XLSX.read(e.target.result,{type:'binary'});
+        parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""}).slice(1);
+      }
+      dataGlobal=parsed.filter(r=>r&&r[0]).map(r=>{let nr=[];for(let j=0;j<12;j++)nr.push(r[j]?String(r[j]).trim():"");return nr;});
+      localStorage.setItem('penjualan',JSON.stringify(dataGlobal));
+    }catch(err){console.log(err);}
+  };
+  file.name.endsWith('.csv')?reader.readAsText(file):reader.readAsBinaryString(file);
+}
+
+function hitungDanTampil(rows){
+  let total=0,profit=0,tunai=0,profitTunai=0,tempo=0,profitTempo=0;
+  rows.forEach(r=>{let nom=parseInt(r[9])||0,prof=parseInt(r[11])||0;total+=nom;profit+=prof;if(r[10]&&r[10].toLowerCase().includes('cash')){tunai+=nom;profitTunai+=prof;}else{tempo+=nom;profitTempo+=prof;}});
+  if(document.getElementById('penjualanBulan'))document.getElementById('penjualanBulan').innerText=rows.length?'Rp '+total.toLocaleString('id'):'-';
+  if(document.getElementById('profitBulan'))document.getElementById('profitBulan').innerText=rows.length?'Rp '+profit.toLocaleString('id'):'-';
+  if(document.getElementById('penjualanTunai'))document.getElementById('penjualanTunai').innerText=rows.length?'Rp '+tunai.toLocaleString('id'):'-';
+  if(document.getElementById('profitTunai'))document.getElementById('profitTunai').innerText=rows.length?'Rp '+profitTunai.toLocaleString('id'):'-';
+  if(document.getElementById('penjualanTempo'))document.getElementById('penjualanTempo').innerText=rows.length?'Rp '+tempo.toLocaleString('id'):'-';
+  if(document.getElementById('profitTempo'))document.getElementById('profitTempo').innerText=rows.length?'Rp '+profitTempo.toLocaleString('id'):'-';
+  tampilBoxSales(rows);tampilTableSales(rows);
+}
+
+function tampilBoxSales(rows){
+  if(!document.getElementById('boxSales'))return;
+  let sales={};
+  rows.forEach(r=>{if(!r[0])return;let nama=r[0].trim().toUpperCase();if(!sales[nama])sales[nama]={cash:0,tempo:0,profitCash:0,profitTempo:0};let nominal=parseInt(r[9])||0,profit=parseInt(r[11])||0;if(r[10]&&r[10].toLowerCase().includes('cash')){sales[nama].cash+=nominal;sales[nama].profitCash+=profit;}else{sales[nama].tempo+=nominal;sales[nama].profitTempo+=profit;}});
+  let html='';
+  Object.keys(sales).sort().forEach(nama=>{let s=sales[nama];html+=`<div class="box"><h3>${nama}</h3><p><b>Penjualan</b><br>Cash : Rp ${s.cash.toLocaleString('id')}<br>Tempo : Rp ${s.tempo.toLocaleString('id')}</p><p><b>Profit</b><br>Cash : Rp ${s.profitCash.toLocaleString('id')}<br>Tempo : Rp ${s.profitTempo.toLocaleString('id')}</p></div>`;});
+  if(!html)html='<div class="box"><h3>RAJU</h3><p>Belum ada data</p></div><div class="box"><h3>HAFID</h3><p>Belum ada data</p></div><div class="box"><h3>JOSSY</h3><p>Belum ada data</p></div>';
+  document.getElementById('boxSales').innerHTML=html;
+}
+
+function tampilTableSales(rows){
+  if(!document.getElementById('tableSales'))return;
+  let sales={};
+  rows.forEach(r=>{if(!r[0])return;let nama=r[0].trim().toUpperCase();if(!sales[nama])sales[nama]={cash:0,tempo:0,profitCash:0,profitTempo:0};let nominal=parseInt(r[9])||0,profit=parseInt(r[11])||0;if(r[10]&&r[10].toLowerCase().includes('cash')){sales[nama].cash+=nominal;sales[nama].profitCash+=profit;}else{sales[nama].tempo+=nominal;sales[nama].profitTempo+=profit;}});
+  let html='<table><tr><th>SALES</th><th>PENJUALAN CASH</th><th>PROFIT CASH</th><th>PENJUALAN TEMPO</th><th>PROFIT TEMPO</th><th>TOTAL PENJUALAN</th><th>TOTAL PROFIT</th></tr>';
+  Object.keys(sales).sort().forEach(nama=>{let s=sales[nama];let totalJual=s.cash+s.tempo,totalProfit=s.profitCash+s.profitTempo;html+=`<tr><td><b>${nama}</b></td><td>Rp ${s.cash.toLocaleString('id')}</td><td>Rp ${s.profitCash.toLocaleString('id')}</td><td>Rp ${s.tempo.toLocaleString('id')}</td><td>Rp ${s.profitTempo.toLocaleString('id')}</td><td><b>Rp ${totalJual.toLocaleString('id')}</b></td><td><b>Rp ${totalProfit.toLocaleString('id')}</b></td></tr>`;});
+  html+='</table>';
+  if(!Object.keys(sales).length)html='<p style="color:#666">Belum ada data penjualan</p>';
+  document.getElementById('tableSales').innerHTML=html;
+}
+
+// Upload Hutang
+function uploadHutangExcel(input){
+  let file=input.files[0];if(!file)return;
+  let reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let rows;
+      if(file.name.endsWith('.csv')){
+        let lines=e.target.result.split('\n');
+        let headers=lines[0].split(',').map(h=>h.trim().toLowerCase());
+        rows=lines.slice(1).filter(l=>l.trim()).map(l=>{let vals=l.split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');return obj;});
+      }else{
+        let wb=XLSX.read(e.target.result,{type:'binary'});
+        rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+      }
+      dataHutang=rows.map(r=>{let nominal=parseInt(String(r.Nominal||r.nominal||'0').replace(/[^0-9]/g,''))||0,bayar=parseInt(String(r.Pembayaran||r.pembayaran||r.Bayar||'0').replace(/[^0-9]/g,''))||0;return{tanggal:r.Tanggal||r.tanggal||'',supplier:r.Supplier||r.supplier||r.Suplier||'',nominal:nominal,bayar:bayar,sisa:nominal-bayar};});
+      localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+      hitungRingkasanHutang();
+      renderHutangTable();
+      document.getElementById('uploadStatusMsgHutang').innerHTML=`<div style="color:#137333;font-weight:600">✓ Berhasil load ${dataHutang.length} data hutang</div>`;
+    }catch(err){console.log(err);}
+  };
+  file.name.endsWith('.csv')?reader.readAsText(file):reader.readAsBinaryString(file);
+}
+
+function hitungRingkasanHutang(){
+  let now=new Date(),bulanIni=now.getMonth(),tahunIni=now.getFullYear(),bulanDepan=(bulanIni+1)%12,tahunDepan=bulanIni===11?tahunIni+1:tahunIni;
+  let tagihanIni=0,bayarIni=0,sisaIni=0,tagihanDepan=0;
+  dataHutang.forEach(h=>{
+    let tgl=parseTanggal(h.tanggal);
+    if(!tgl || isNaN(tgl)) return;
+    if(tgl.getMonth()===bulanIni && tgl.getFullYear()===tahunIni){
+      tagihanIni+=h.nominal;bayarIni+=h.bayar;sisaIni+=h.sisa;
+    }
+    if(tgl.getMonth()===bulanDepan && tgl.getFullYear()===tahunDepan){
+      tagihanDepan+=h.nominal;
+    }
+  });
+  document.getElementById('lblTagihanBulanIni').innerText='Rp '+tagihanIni.toLocaleString('id');
+  document.getElementById('lblBayarBulanIni').innerText='Rp '+bayarIni.toLocaleString('id');
+  document.getElementById('lblSisaBulanIni').innerText='Rp '+sisaIni.toLocaleString('id');
+  document.getElementById('lblTagihanBulanDepan').innerText='Rp '+tagihanDepan.toLocaleString('id');
+}
+
+function renderHutangTable(){
+  if(!document.getElementById('hutangTableScroll'))return;
+  if(dataHutang.length===0){document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px">Belum ada data hutang</p>';return;}
+  let html='<table><tr><th>Tanggal</th><th>Supplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th><th>Aksi</th></tr>';
+  dataHutang.forEach((h,i)=>{
+    let isEdit=editingRowHutang===i;
+    let tglObj=parseTanggal(h.tanggal);
+    let tglTampil=tglObj? tglObj.toLocaleDateString('id-ID') : h.tanggal;
+    html+=`<tr class="${isEdit?'editing':''}">`;
+    if(isEdit){
+      html+=`<td><input type="text" id="edit-hutang-${i}-tgl" value="${h.tanggal}" style="width:100%;padding:4px;font-size:12px"></td>
+              <td><input type="text" id="edit-hutang-${i}-sup" value="${h.supplier}" style="width:100%;padding:4px;font-size:12px"></td>
+              <td><input type="number" id="edit-hutang-${i}-nom" value="${h.nominal}" style="width:100%;padding:4px;font-size:12px" oninput="updateSisaHutang(${i})"></td>
+              <td><input type="number" id="edit-hutang-${i}-bayar" value="${h.bayar}" style="width:100%;padding:4px;font-size:12px" oninput="updateSisaHutang(${i})"></td>
+              <td><input type="number" id="edit-hutang-${i}-sisa" value="${h.sisa}" readonly style="width:100%;padding:4px;font-size:12px;background:#f5f5f5"></td>
+              <td><button class="btn-aksi btn-simpan" onclick="simpanRowHutang(${i})">Simpan</button><button class="btn-aksi btn-batal" onclick="batalEditHutang()">Batal</button></td>`;
+    }else{
+      html+=`<td>${tglTampil}</td><td>${h.supplier}</td><td>Rp ${h.nominal.toLocaleString('id')}</td><td>Rp ${h.bayar.toLocaleString('id')}</td>
+              <td style="color:${h.sisa>0?'#dc3545':'#28a745'};font-weight:bold">Rp ${h.sisa.toLocaleString('id')}</td>
+              <td><button class="btn-aksi btn-edit" onclick="editRowHutang(${i})">Edit</button><button class="btn-aksi btn-hapus" onclick="hapusHutang(${i})">Hapus</button></td>`;
+    }
+    html+=`</tr>`;
+  });
+  html+='</table>';
+  document.getElementById('hutangTableScroll').innerHTML=html;
+}
+
+function updateSisaHutang(i){
+  let nom=parseInt(document.getElementById(`edit-hutang-${i}-nom`).value)||0;
+  let bayar=parseInt(document.getElementById(`edit-hutang-${i}-bayar`).value)||0;
+  document.getElementById(`edit-hutang-${i}-sisa`).value=nom-bayar;
+}
 function editRowHutang(i){editingRowHutang=i;renderHutangTable();}
 function batalEditHutang(){editingRowHutang=null;renderHutangTable();}
-function simpanRowHutang(i){let tgl=document.getElementById(`edit-hutang-${i}-tgl`).value.trim(),sup=document.getElementById(`edit-hutang-${i}-sup`).value.trim(),nom=parseInt(document.getElementById(`edit-hutang-${i}-nom`).value)||0,bayar=parseInt(document.getElementById(`edit-hutang-${i}-bayar`).value)||0;dataHutang[i]={tanggal:tgl,supplier:sup,nominal:nom,bayar:bayar,sisa:nom-bayar};localStorage.setItem('hutang_data',JSON.stringify(dataHutang));editingRowHutang=null;hitungRingkasanHutang();renderHutangTable();}
-function hapusHutang(i){showConfirmModal('Yakin hapus data hutang ini?',()=>{dataHutang.splice(i,1);localStorage.setItem('hutang_data',JSON.stringify(dataHutang));hitungRingkasanHutang();renderHutangTable();});}
+function simpanRowHutang(i){
+  let tgl=document.getElementById(`edit-hutang-${i}-tgl`).value.trim();
+  let sup=document.getElementById(`edit-hutang-${i}-sup`).value.trim();
+  let nom=parseInt(document.getElementById(`edit-hutang-${i}-nom`).value)||0;
+  let bayar=parseInt(document.getElementById(`edit-hutang-${i}-bayar`).value)||0;
+  dataHutang[i]={tanggal:tgl,supplier:sup,nominal:nom,bayar:bayar,sisa:nom-bayar};
+  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+  editingRowHutang=null;hitungRingkasanHutang();renderHutangTable();
+}
+function hapusHutang(i){
+  showConfirmModal('Yakin hapus data hutang ini?',()=>{
+    dataHutang.splice(i,1);
+    localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+    hitungRingkasanHutang();renderHutangTable();
+  });
+}
 </script>
 </body>
 </html>
