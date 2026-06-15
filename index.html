@@ -2,18 +2,18 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 <style>
+/* CSS tetap sama */
 body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:#f5f7fa}
-.header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.header .logo{font-weight:700;color:#d4af37;font-size:16px}
-.layout{display:flex;min-height:calc(100vh - 50px)}
+.header{background:linear-gradient(90deg,#004aad,#0066cc);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:15px;position:sticky;top:0;z-index:100;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
 .sidebar{width:220px;background:#fff;border-right:1px solid #ddd;padding:10px 0;flex-shrink:0}
 .menu-item{padding:12px 20px;cursor:pointer;font-size:14px;color:#333}
 .menu-item:hover{background:#f0f5ff;color:#004aad}
 .menu-item.active{background:#004aad;color:#fff;font-weight:600}
 .content{flex:1;padding:20px}
-.table-wrap{background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.table-wrap{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{background:#004aad;color:#d4af37;padding:10px;text-align:left}
 td{padding:8px;border-bottom:1px solid #eee}
@@ -24,7 +24,7 @@ td{padding:8px;border-bottom:1px solid #eee}
 
 <div id="dashboard">
   <div class="header"><div class="logo">Gajah Mas</div></div>
-  <div class="layout">
+  <div style="display:flex">
     <div class="sidebar" id="menuContainer"></div>
     <div class="content" id="mainContent"></div>
   </div>
@@ -32,26 +32,18 @@ td{padding:8px;border-bottom:1px solid #eee}
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// 1. Data Menu
+// Menu Data
 const menuData = [
+  {id: 'kas', label: 'Kas'},
+  {id: 'piutang', label: 'Piutang'},
   {id: 'hutang', label: 'Hutang Dagang'}
 ];
 
-// 2. Membangun Sidebar
-function buildMenu() {
-  let html = '';
-  menuData.forEach(item => {
-    html += `<div class="menu-item" onclick="show('${item.id}')">${item.label}</div>`;
-  });
-  document.getElementById('menuContainer').innerHTML = html;
-}
-
-// 3. Halaman
 const pages = {
   hutang: `
     <div class="table-wrap">
       <h3>Data Hutang Dagang</h3>
-      <div id="hutangTableScroll" class="table-scroll">
+      <div id="hutangTableScroll">
         <p style="color:#666">Belum ada data. Silakan upload file Excel hutang Anda.</p>
       </div>
       <div style="margin-top:20px;">
@@ -62,20 +54,21 @@ const pages = {
   `
 };
 
-// 4. Fungsi Menampilkan Halaman
-function show(id) {
-  document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Menu tidak ditemukan</h3>';
-  
-  // Tandai menu aktif
-  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-  event.target.classList.add('active');
+function buildMenu() {
+  let html = '';
+  menuData.forEach(item => {
+    html += `<div class="menu-item" onclick="show('${item.id}')">${item.label}</div>`;
+  });
+  document.getElementById('menuContainer').innerHTML = html;
+}
 
+function show(id) {
+  document.getElementById('mainContent').innerHTML = pages[id] || '<h3>Halaman tidak ditemukan</h3>';
   if(id === 'hutang') {
     renderHutangTable(JSON.parse(localStorage.getItem('data_hutang') || '[]'));
   }
 }
 
-// 5. Logika Excel
 function prosesFileHutang(input) {
   let file = input.files[0];
   let reader = new FileReader();
@@ -86,7 +79,7 @@ function prosesFileHutang(input) {
     let combined = oldData.concat(newData);
     localStorage.setItem('data_hutang', JSON.stringify(combined));
     renderHutangTable(combined);
-    alert('Data berhasil diupload!');
+    alert('Data berhasil ditambahkan!');
   };
   reader.readAsBinaryString(file);
 }
@@ -106,7 +99,7 @@ function renderHutangTable(data) {
 
 // Inisialisasi
 buildMenu();
-show('hutang');
+show('kas');
 </script>
 </body>
 </html>
