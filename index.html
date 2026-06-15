@@ -2,60 +2,60 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CV Gajah Mas</title>
 <style>
-  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; display: flex; height: 100vh; background: #f4f7f6; }
-  .sidebar { width: 220px; background: #fff; border-right: 1px solid #ddd; padding-top: 10px; flex-shrink: 0; }
-  .menu-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; transition: 0.2s; }
+  body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; }
+  .header { background: #004aad; color: #fff; padding: 15px 20px; font-weight: bold; }
+  .layout { display: flex; height: calc(100vh - 50px); }
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #ddd; padding-top: 10px; }
+  .menu-item { padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #eee; }
   .menu-item:hover { background: #eef; color: #004aad; }
-  .menu-item.active { background: #004aad; color: #fff; font-weight: 600; }
+  .menu-item.active { background: #004aad; color: #fff; }
   .content { flex: 1; padding: 25px; overflow-y: auto; }
   .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; }
-  th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
   th { background: #004aad; color: #fff; }
 </style>
 </head>
 <body>
 
-<div class="sidebar">
-  <div style="padding: 20px; font-weight: bold; color: #004aad; border-bottom: 2px solid #004aad;">GAJAH MAS</div>
-  <div class="menu-item" onclick="loadPage('ringkasan', this)">Ringkasan Penjualan</div>
-  <div class="menu-item" onclick="loadPage('datatable', this)">Data Penjualan</div>
-  <div class="menu-item" onclick="loadPage('hutang', this)">Hutang Dagang</div>
-</div>
-
-<div class="content" id="mainContent">
-  <h3>Selamat Datang</h3>
-  <p>Pilih menu di samping untuk melihat data Anda.</p>
+<div class="header">GAJAH MAS</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="menu-item" onclick="loadPage('ringkasan', this)">Ringkasan Penjualan</div>
+    <div class="menu-item" onclick="loadPage('datatable', this)">Data Penjualan</div>
+    <div class="menu-item" onclick="loadPage('hutang', this)">Hutang Dagang</div>
+  </div>
+  <div class="content" id="mainContent">
+    <h3>Selamat Datang</h3>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+// Fungsi konversi angka Excel ke tanggal JS
+function excelDateToJSDate(serial) {
+   let utc_days  = Math.floor(serial - 25569);
+   let utc_value = utc_days * 86400;                                        
+   let date_info = new Date(utc_value * 1000);
+   return date_info;
+}
+
 function loadPage(id, el) {
-  // Update class active
   document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
   el.classList.add('active');
-
   const container = document.getElementById('mainContent');
-  
   if(id === 'hutang') {
-    container.innerHTML = `
-      <h3>Data Hutang Dagang</h3>
-      <div id="summary" style="display:flex; gap:15px;"></div>
-      <input type="file" id="fileIn" onchange="prosesHutang(event)" style="margin:20px 0;">
-      <div id="tableArea"></div>
-    `;
+    container.innerHTML = `<h3>Data Hutang Dagang</h3><div id="summary" style="display:flex; gap:15px;"></div><input type="file" onchange="prosesHutang(event)" style="margin:20px 0;"><div id="tableArea"></div>`;
     let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
     if(data.length > 0) renderHutang(data);
   } else {
-    container.innerHTML = `<h3>${id.replace('_', ' ').toUpperCase()}</h3><p>Fitur ${id} akan segera dikembangkan.</p>`;
+    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Fitur dalam pengembangan.</p>`;
   }
 }
 
 function prosesHutang(e) {
-  let file = e.target.files[0];
   let reader = new FileReader();
   reader.onload = function(evt) {
     let wb = XLSX.read(evt.target.result, {type: 'binary'});
@@ -63,32 +63,28 @@ function prosesHutang(e) {
     localStorage.setItem('data_hutang', JSON.stringify(data));
     renderHutang(data);
   };
-  reader.readAsBinaryString(file);
+  reader.readAsBinaryString(e.target.files[0]);
 }
 
 function renderHutang(data) {
   let now = new Date();
-  let thisMonth = now.getMonth();
-  let nextMonth = now.getMonth() + 1;
   let mIni = {bayar:0, sisa:0}, mDepan = {bayar:0, sisa:0};
-
   let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+  
   data.forEach(r => {
-    let tgl = new Date(r['Tanggal']);
+    // Deteksi jika Tanggal adalah angka serial Excel (46175, dll)
+    let d = typeof r['Tanggal'] === 'number' ? excelDateToJSDate(r['Tanggal']) : new Date(r['Tanggal']);
     let nom = parseFloat(String(r['Nominal']).replace(/[^0-9.-]+/g,"")||0);
     let bay = parseFloat(String(r['Pembayaran']).replace(/[^0-9.-]+/g,"")||0);
     let sisa = nom - bay;
 
-    if(tgl.getMonth() === thisMonth) { mIni.bayar += bay; mIni.sisa += sisa; }
-    if(tgl.getMonth() === nextMonth) { mDepan.bayar += bay; mDepan.sisa += sisa; }
+    if(d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) { mIni.bayar += bay; mIni.sisa += sisa; }
+    if(d.getMonth() === now.getMonth()+1 && d.getFullYear() === now.getFullYear()) { mDepan.bayar += bay; mDepan.sisa += sisa; }
 
-    html += `<tr><td>${r['Tanggal']}</td><td>${r['Suplier']}</td><td>${nom.toLocaleString()}</td><td>${bay.toLocaleString()}</td><td>${sisa.toLocaleString()}</td></tr>`;
+    html += `<tr><td>${d.toLocaleDateString()}</td><td>${r['Suplier']}</td><td>${nom.toLocaleString()}</td><td>${bay.toLocaleString()}</td><td>${sisa.toLocaleString()}</td></tr>`;
   });
 
-  document.getElementById('summary').innerHTML = `
-    <div class="card"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar.toLocaleString()}<br>Sisa: ${mIni.sisa.toLocaleString()}</div>
-    <div class="card"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar.toLocaleString()}<br>Sisa: ${mDepan.sisa.toLocaleString()}</div>
-  `;
+  document.getElementById('summary').innerHTML = `<div class="card"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar.toLocaleString()}<br>Sisa: ${mIni.sisa.toLocaleString()}</div><div class="card"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar.toLocaleString()}<br>Sisa: ${mDepan.sisa.toLocaleString()}</div>`;
   document.getElementById('tableArea').innerHTML = html + '</table>';
 }
 </script>
