@@ -198,7 +198,10 @@ function uploadFileKeu(tipe){
       let parsed=[];
       if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
       else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}
-      dataStore[tipe]=parsed;localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));showNotification('Upload '+tipe+' berhasil','success');renderKeuangan();
+      dataStore[tipe]=parsed; // FIX: cuma update tipe yg diupload, bukan timpa semua
+      localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));
+      showNotification('Upload '+tipe+' berhasil','success');
+      renderKeuangan();
     };
     if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
   };input.click();
