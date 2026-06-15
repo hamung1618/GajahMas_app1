@@ -4,52 +4,53 @@
 <meta charset="UTF-8">
 <title>CV Gajah Mas - Dashboard</title>
 <style>
-body{margin:0;font-family:Arial,sans-serif;background:#f4f7f6}
-.header{background:#004aad;color:#fff;padding:15px 20px;}
-.container{display:flex}
-.sidebar{width:200px;background:#fff;height:100vh;border-right:1px solid #ddd}
-.menu-item{padding:15px;cursor:pointer;border-bottom:1px solid #eee}
-.menu-item:hover{background:#eef}
-.content{flex:1;padding:20px}
-.summary-card{background:#fff;padding:15px;border-radius:8px;margin-bottom:20px;display:flex;gap:20px;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
-.stat{flex:1;text-align:center}
-table{width:100%;border-collapse:collapse;background:#fff}
-th,td{padding:10px;border:1px solid #ddd;text-align:left}
+  body{margin:0;font-family:Arial,sans-serif;background:#f4f7f6;display:flex;height:100vh}
+  .sidebar{width:200px;background:#fff;border-right:1px solid #ddd;padding-top:20px}
+  .menu-item{padding:15px;cursor:pointer;border-bottom:1px solid #eee;font-size:14px}
+  .menu-item:hover{background:#eef}
+  .content{flex:1;padding:20px;overflow-y:auto}
+  .card{background:#fff;padding:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,0.1);margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;background:#fff}
+  th,td{padding:10px;border:1px solid #ddd;text-align:left}
+  th{background:#004aad;color:#fff}
 </style>
 </head>
 <body>
 
-<div class="header"><h2>Dashboard Gajah Mas</h2></div>
-<div class="container">
-  <div class="sidebar">
-    <div class="menu-item" onclick="loadPage('kas')">Kas</div>
-    <div class="menu-item" onclick="loadPage('piutang')">Piutang</div>
-    <div class="menu-item" onclick="loadPage('hutang')">Hutang Dagang</div>
-  </div>
-  <div class="content" id="mainContent">
-    <h3>Pilih Menu di samping</h3>
-  </div>
+<div class="sidebar">
+  <div class="menu-item" onclick="loadPage('ringkasan')">Ringkasan Penjualan</div>
+  <div class="menu-item" onclick="loadPage('datatable')">Data Penjualan</div>
+  <div class="menu-item" onclick="loadPage('hutang')">Hutang Dagang</div>
+</div>
+
+<div class="content" id="mainContent">
+  <h3>Selamat Datang</h3>
+  <p>Pilih menu di samping untuk mulai.</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const pages = {
-  kas: "<h3>Halaman Kas</h3><p>Fitur Kas akan segera tersedia.</p>",
-  piutang: "<h3>Halaman Piutang</h3><p>Fitur Piutang akan segera tersedia.</p>",
+  ringkasan: "<h3>Ringkasan Penjualan</h3><p>Data penjualan bulan ini akan tampil di sini.</p>",
+  datatable: "<h3>Data Penjualan Lengkap</h3><p>Tabel data penjualan Anda.</p>",
   hutang: `
     <h3>Data Hutang Dagang</h3>
-    <div class="summary-card" id="summary"></div>
-    <input type="file" id="fileIn" onchange="handleFile(event)" style="margin-bottom:10px">
+    <div id="summary" style="display:flex; gap:10px;"></div>
+    <input type="file" id="fileIn" onchange="prosesHutang(event)" style="margin:20px 0;">
     <div id="tableArea"></div>
   `
 };
 
 function loadPage(id) {
   document.getElementById('mainContent').innerHTML = pages[id];
-  if(id === 'hutang') renderHutang(JSON.parse(localStorage.getItem('data_hutang') || '[]'));
+  if(id === 'hutang') {
+    let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
+    if(data.length > 0) renderHutang(data);
+  }
 }
 
-function handleFile(e) {
+function prosesHutang(e) {
+  let file = e.target.files[0];
   let reader = new FileReader();
   reader.onload = function(evt) {
     let wb = XLSX.read(evt.target.result, {type: 'binary'});
@@ -57,32 +58,32 @@ function handleFile(e) {
     localStorage.setItem('data_hutang', JSON.stringify(data));
     renderHutang(data);
   };
-  reader.readAsBinaryString(e.target.files[0]);
+  reader.readAsBinaryString(file);
 }
 
 function renderHutang(data) {
   let now = new Date();
   let thisMonth = now.getMonth();
   let nextMonth = now.getMonth() + 1;
-  
   let mIni = {bayar:0, sisa:0}, mDepan = {bayar:0, sisa:0};
-  
-  data.forEach(row => {
-    let tgl = new Date(row['Tanggal']);
-    let nom = parseFloat(row['Nominal']||0);
-    let bay = parseFloat(row['Pembayaran']||0);
-    
-    if(tgl.getMonth() === thisMonth) { mIni.bayar += bay; mIni.sisa += (nom - bay); }
-    if(tgl.getMonth() === nextMonth) { mDepan.bayar += bay; mDepan.sisa += (nom - bay); }
+
+  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
+  data.forEach(r => {
+    let tgl = new Date(r['Tanggal']);
+    let nom = parseFloat(String(r['Nominal']).replace(/[^0-9.-]+/g,"")||0);
+    let bay = parseFloat(String(r['Pembayaran']).replace(/[^0-9.-]+/g,"")||0);
+    let sisa = nom - bay;
+
+    if(tgl.getMonth() === thisMonth) { mIni.bayar += bay; mIni.sisa += sisa; }
+    if(tgl.getMonth() === nextMonth) { mDepan.bayar += bay; mDepan.sisa += sisa; }
+
+    html += `<tr><td>${r['Tanggal']}</td><td>${r['Suplier']}</td><td>${nom.toLocaleString()}</td><td>${bay.toLocaleString()}</td><td>${sisa.toLocaleString()}</td></tr>`;
   });
 
   document.getElementById('summary').innerHTML = `
-    <div class="stat"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar}<br>Sisa: ${mIni.sisa}</div>
-    <div class="stat"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar}<br>Sisa: ${mDepan.sisa}</div>
+    <div class="card"><b>Bulan Ini</b><br>Bayar: ${mIni.bayar.toLocaleString()}<br>Sisa: ${mIni.sisa.toLocaleString()}</div>
+    <div class="card"><b>Bulan Depan</b><br>Bayar: ${mDepan.bayar.toLocaleString()}<br>Sisa: ${mDepan.sisa.toLocaleString()}</div>
   `;
-  
-  let html = '<table><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Pembayaran</th><th>Sisa</th></tr>';
-  data.forEach(r => html += `<tr><td>${r['Tanggal']}</td><td>${r['Suplier']}</td><td>${r['Nominal']}</td><td>${r['Pembayaran']}</td><td>${r['Nominal'] - r['Pembayaran']}</td></tr>`);
   document.getElementById('tableArea').innerHTML = html + '</table>';
 }
 </script>
