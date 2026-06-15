@@ -29,16 +29,17 @@
   </div>
   <div class="content" id="mainContent">
     <h3>Selamat Datang</h3>
-    <p>Pilih menu di samping untuk melihat data Anda.</p>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-// Fungsi konversi angka Excel ke tanggal JS
+// FUNGSI UTAMA
 function excelDateToJSDate(serial) {
-   let utc_days = Math.floor(serial - 25569);
-   return new Date(utc_days * 86400 * 1000);
+   let utc_days  = Math.floor(serial - 25569);
+   let utc_value = utc_days * 86400;                                        
+   let date_info = new Date(utc_value * 1000);
+   return date_info;
 }
 
 function loadPage(id, el) {
@@ -51,8 +52,8 @@ function loadPage(id, el) {
     let data = JSON.parse(localStorage.getItem('data_hutang') || '[]');
     if(data.length > 0) renderHutang(data);
   } else {
-    // Mempertahankan struktur asli untuk menu lainnya
-    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Fitur ${id} dalam tahap pengembangan.</p>`;
+    // Ini mengembalikan tampilan asli Anda untuk menu lain
+    container.innerHTML = `<h3>${id.toUpperCase()}</h3><p>Halaman ${id} sedang aktif.</p>`;
   }
 }
 
@@ -74,7 +75,6 @@ function renderHutang(data) {
   
   data.forEach(r => {
     let d = typeof r['Tanggal'] === 'number' ? excelDateToJSDate(r['Tanggal']) : new Date(r['Tanggal']);
-    // Membersihkan format "Rp" dan titik ribuan agar jadi angka
     let nom = parseFloat(String(r['Nominal']).replace(/[^0-9.-]+/g,"")||0);
     let bay = parseFloat(String(r['Pembayaran']).replace(/[^0-9.-]+/g,"")||0);
     let sisa = nom - bay;
