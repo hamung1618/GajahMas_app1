@@ -20,18 +20,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 .login-box{background:white;padding:40px 35px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);width:100%;max-width:380px;text-align:center}
 .login-box h1{color:#004aad;margin-bottom:10px;font-size:26px}
 .login-box p{color:#666;margin-bottom:25px;font-size:13px}
-.login-box input{width:100%;padding:12px 15px;margin-bottom:15px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px;transition:border 0.2s}
+.login-box input{width:100%;padding:12px 15px;margin-bottom:15px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px}
 .login-box input:focus{outline:none;border-color:#004aad}
-.login-box button{width:100%;padding:12px;background:#004aad;color:white;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s}
+.login-box button{width:100%;padding:12px;background:#004aad;color:white;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer}
 .login-box button:hover{background:#003580}
 #app{display:none}
-header{background:#004aad;color:white;padding:14px 25px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 5px rgba(0,0,0,0.1)}
+header{background:#004aad;color:white;padding:14px 25px;display:flex;justify-content:space-between;align-items:center}
 header h1{font-size:18px;font-weight:600}
 header button{background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:13px}
-header button:hover{background:rgba(255,255,255,0.3)}
 .container{display:flex;min-height:calc(100vh - 54px)}
 .sidebar{width:240px;background:white;border-right:1px solid #e0e0e0;padding:15px 0;overflow-y:auto}
-.sidebar button{display:block;width:100%;text-align:left;padding:11px 20px;background:none;border:none;cursor:pointer;font-size:13px;color:#555;transition:all 0.2s;border-left:3px solid transparent}
+.sidebar button{display:block;width:100%;text-align:left;padding:11px 20px;background:none;border:none;cursor:pointer;font-size:13px;color:#555;border-left:3px solid transparent}
 .sidebar button:hover{background:#f0f4f8;color:#004aad}
 .sidebar button.active{background:#e6f0ff;color:#004aad;border-left-color:#004aad;font-weight:600}
 .main{flex:1;padding:25px;overflow-y:auto}
@@ -39,25 +38,22 @@ header button:hover{background:rgba(255,255,255,0.3)}
 .table-wrap h3{margin-bottom:15px;color:#004aad;font-size:16px}
 .table-scroll{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:600px}
-th{background:#004aad;color:white;padding:11px 12px;text-align:left;font-weight:600;font-size:13px;position:sticky;top:0}
+th{background:#004aad;color:white;padding:11px 12px;text-align:left;font-weight:600;font-size:13px}
 td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
 tr:hover td{background:#f8f9fa}
 input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;background:#fafafa;width:100%;cursor:pointer}
-.btn-aksi{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:5px;transition:opacity 0.2s}
-.btn-aksi:hover{opacity:0.8}
+.btn-aksi{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:5px}
 .btn-simpan{background:#28a745;color:white}
 .btn-edit{background:#ffc107;color:#333}
-.btn-hapus{background:#dc3545;color:white}
-#notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s}
-@keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+#notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .notification-success{background:#28a745}
 .notification-error{background:#dc3545}
 @media(max-width:768px){
- .container{flex-direction:column}
- .sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-right:none;border-bottom:1px solid #e0e0e0}
- .sidebar button{white-space:nowrap;border-left:none;border-bottom:3px solid transparent}
- .sidebar button.active{border-left:none;border-bottom-color:#004aad}
- .main{padding:15px}
+.container{flex-direction:column}
+.sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-bottom:1px solid #e0e0e0}
+.sidebar button{white-space:nowrap;border-left:none;border-bottom:3px solid transparent}
+.sidebar button.active{border-bottom-color:#004aad}
+.main{padding:15px}}
 </style>
 </head>
 <body>
@@ -66,8 +62,8 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
   <div class="login-box">
     <h1>Gajah Mas</h1>
     <p>Private Data System</p>
-    <input type="text" id="username" placeholder="Username" autocomplete="username">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
   </div>
 </div>
@@ -100,10 +96,10 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
 <div id="notification"></div>
 
 <script>
-let dataStore = {saldoAwal:[],pemasukan:[],pengeluaran:[],saldoAkhir:[]};
-let dataGlobal = [];
-let dataPiutang = [];
-let dataHutang = [];
+let dataStore={saldoAwal:[],pemasukan:[],pengeluaran:[],saldoAkhir:[]};
+let dataGlobal=[];
+let dataPiutang=[];
+let dataHutang=[];
 
 function showNotification(msg,type='success'){
   let notif=document.getElementById('notification');
@@ -135,70 +131,17 @@ if(localStorage.getItem('gajahmas_login')==='1'){
 }
 
 let pages={
-  kas: `
+  kas:`
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-bottom:15px">
-      <div class="table-wrap">
-        <h4>SALDO AWAL</h4>
-        <div id="boxSaldoAwal"><p style="color:#666;font-size:13px">Belum ada data</p></div>
-        <p style="margin-top:10px"><b>Total Saldo Awal : <span id="totalSaldoAwal">Rp 0</span></b></p>
-      </div>
-      <div class="table-wrap">
-        <h4>SALDO AKHIR</h4>
-        <div id="boxSaldoAkhir"><p style="color:#666;font-size:13px">Belum ada data</p></div>
-        <p style="margin-top:10px"><b>Total Saldo Akhir : <span id="totalSaldoAkhir">Rp 0</span></b></p>
-      </div>
+      <div class="table-wrap"><h4>SALDO AWAL</h4><div id="boxSaldoAwal"><p style="color:#666;font-size:13px">Belum ada data</p></div><p style="margin-top:10px"><b>Total Saldo Awal : <span id="totalSaldoAwal">Rp 0</span></b></p></div>
+      <div class="table-wrap"><h4>SALDO AKHIR</h4><div id="boxSaldoAkhir"><p style="color:#666;font-size:13px">Belum ada data</p></div><p style="margin-top:10px"><b>Total Saldo Akhir : <span id="totalSaldoAkhir">Rp 0</span></b></p></div>
     </div>
-    <div class="table-wrap" style="padding:15px 20px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2">
-        <div><b>Uang Masuk Dari Penjualan Cash :</b></div>
-        <div><b><span id="totalPemasukanCash">Rp 0</span></b></div>
-        <div><b>Uang Masuk Dari Pembayaran Piutang :</b></div>
-        <div><b><span id="totalPemasukanPiutang">Rp 0</span></b></div>
-      </div>
-      <div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid #ddd">
-        <b>Total Uang Masuk : <span id="totalPemasukan">Rp 0</span></b>
-      </div>
-    </div>
-    <div class="table-wrap" id="boxRumusKas" style="border:2px solid #004aad;padding:15px 20px;line-height:2">
-      <div><b>Saldo Awal + Total Pemasukan</b><br>Rp 0 + Rp 0 = Rp 0</div>
-      <div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp 0</div>
-      <div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp 0</div>
-    </div>
-    <div style="margin-top:20px;padding-top:15px;border-top:2px solid #004aad;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAwal')">Upload Saldo Awal</button>
-      <button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pemasukan')">Upload Pemasukan</button>
-      <button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pengeluaran')">Upload Pengeluaran</button>
-      <button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAkhir')">Upload Saldo Akhir</button>
-    </div>
-  `,
-  hutang: `
-    <div class="table-wrap" style="margin-bottom:15px;padding:15px 20px">
-      <h3 style="margin:0 0 15px 0">Hutang Dagang</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2">
-        <div><b>Total Tagihan Bulan ini :</b></div>
-        <div><b><span id="totalTagihanBulanIni">Rp 0</span></b></div>
-        <div><b>Total Tagihan Bulan Depan :</b></div>
-        <div><b><span id="totalTagihanBulanDepan">Rp 0</span></b></div>
-        <div><b>Terbayar :</b></div>
-        <div><b><span id="totalHutangTerbayar">Rp 0</span></b></div>
-        <div><b>Belum Terbayar :</b></div>
-        <div><b><span id="totalHutangBelumBayar">Rp 0</span></b></div>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-        <h3 style="margin:0">Daftar Hutang Supplier</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="file" id="hutangFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="uploadHutang(this)">
-          <button class="btn-aksi btn-simpan" onclick="document.getElementById('hutangFile').click()">Upload Hutang</button>
-          <button class="btn-aksi btn-edit" onclick="renderHutang()">Reset Filter</button>
-        </div>
-      </div>
-      <div class="table-scroll" id="hutangTableScroll">
-        <p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>
-      </div>
-    </div>
-  `,
+    <div class="table-wrap" style="padding:15px 20px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2"><div><b>Uang Masuk Dari Penjualan Cash :</b></div><div><b><span id="totalPemasukanCash">Rp 0</span></b></div><div><b>Uang Masuk Dari Pembayaran Piutang :</b></div><div><b><span id="totalPemasukanPiutang">Rp 0</span></b></div></div><div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid #ddd"><b>Total Uang Masuk : <span id="totalPemasukan">Rp 0</span></b></div></div>
+    <div class="table-wrap" id="boxRumusKas" style="border:2px solid #004aad;padding:15px 20px;line-height:2"><div><b>Saldo Awal + Total Pemasukan</b><br>Rp 0 + Rp 0 = Rp 0</div><div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp 0</div><div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp 0</div></div>
+    <div style="margin-top:20px;padding-top:15px;border-top:2px solid #004aad;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAwal')">Upload Saldo Awal</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pemasukan')">Upload Pemasukan</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pengeluaran')">Upload Pengeluaran</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAkhir')">Upload Saldo Akhir</button></div>`,
+  hutang:`
+    <div class="table-wrap" style="margin-bottom:15px;padding:15px 20px"><h3 style="margin:0 0 15px 0">Hutang Dagang</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2"><div><b>Total Tagihan Bulan ini :</b></div><div><b><span id="totalTagihanBulanIni">Rp 0</span></b></div><div><b>Total Tagihan Bulan Depan :</b></div><div><b><span id="totalTagihanBulanDepan">Rp 0</span></b></div><div><b>Terbayar :</b></div><div><b><span id="totalHutangTerbayar">Rp 0</span></b></div><div><b>Belum Terbayar :</b></div><div><b><span id="totalHutangBelumBayar">Rp 0</span></b></div></div></div>
+    <div class="table-wrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px"><h3 style="margin:0">Daftar Hutang Supplier</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="hutangFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="uploadHutang(this)"><button class="btn-aksi btn-simpan" onclick="document.getElementById('hutangFile').click()">Upload Hutang</button><button class="btn-aksi btn-edit" onclick="renderHutang()">Reset Filter</button></div></div><div class="table-scroll" id="hutangTableScroll"><p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p></div></div>`,
   penjualan:`<div class="table-wrap"><h3>Data Penjualan</h3><div class="table-scroll" id="penjualanTable"></div></div>`,
   ringkasan:`<div class="table-wrap"><h3>Ringkasan Keuangan</h3><div id="ringkasanContent"></div></div>`,
   data:`<div class="table-wrap"><h3>Data Tabel</h3><div class="table-scroll" id="dataTable"></div></div>`,
@@ -220,248 +163,113 @@ function show(id){
   if(id==='penjualan')renderPenjualan();
   if(id==='ringkasan')renderRingkasan();
   if(id==='data')renderData();
-  if(id==='piutang'){
-    dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');
-    renderPiutang();
-  }
-  if(id==='hutang'){
-    dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-    renderHutang();
-  }
+  if(id==='piutang'){dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');renderPiutang();}
+  if(id==='hutang'){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
 }
 
 function makeTable(data){
   if(!data||!data.length)return'<p style="color:#666">Belum ada data</p>';
-  let html='<table><thead><tr>';
-  Object.keys(data[0]).forEach(k=>html+=`<th>${k}</th>`);
-  html+='</tr></thead><tbody>';
-  data.forEach(r=>{
-    html+='<tr>';
-    Object.values(r).forEach(v=>html+=`<td>${v}</td>`);
-    html+='</tr>';
-  });
+  let html='<table><thead><tr>';Object.keys(data[0]).forEach(k=>html+=`<th>${k}</th>`);html+='</tr></thead><tbody>';
+  data.forEach(r=>{html+='<tr>';Object.values(r).forEach(v=>html+=`<td>${v}</td>`);html+='</tr>';});
   return html+'</tbody></table>';
 }
 
-function sumColumn(arr,key='Nominal'){
-  return arr.reduce((s,r)=>s+(parseInt(String(r[key]||'0').replace(/[^0-9]/g,''))||0),0);
-}
+function sumColumn(arr,key='Nominal'){return arr.reduce((s,r)=>s+(parseInt(String(r[key]||'0').replace(/[^0-9]/g,''))||0),0);}
 
 function renderKeuangan(){
-  // Load ulang dari localStorage biar nggak hilang pas pindah menu
-  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>{
-    dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]');
-  });
-
-  let totalAwal=sumColumn(dataStore.saldoAwal);
-  let totalMasuk=sumColumn(dataStore.pemasukan);
-  let totalKeluar=sumColumn(dataStore.pengeluaran);
-  let kasAkhir=totalAwal+totalMasuk-totalKeluar;
-  let totalAkhir=sumColumn(dataStore.saldoAkhir);
-
-  let pemasukanCash=0;
-  dataGlobal.forEach(r=>{
-    if(r[10]&&r[10].toLowerCase().includes('cash'))pemasukanCash+=parseInt(r[9])||0;
-  });
-  let pemasukanPiutang=totalMasuk-pemasukanCash;
-  if(pemasukanPiutang<0)pemasukanPiutang=0;
-
-  if(dataStore.saldoAwal.length){
-    document.getElementById('boxSaldoAwal').innerHTML=makeTable(dataStore.saldoAwal);
-    document.getElementById('totalSaldoAwal').innerText='Rp '+totalAwal.toLocaleString('id-ID');
-  }
-  if(dataStore.saldoAkhir.length){
-    document.getElementById('boxSaldoAkhir').innerHTML=makeTable(dataStore.saldoAkhir);
-    document.getElementById('totalSaldoAkhir').innerText='Rp '+totalAkhir.toLocaleString('id-ID');
-  }
+  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]'));
+  let totalAwal=sumColumn(dataStore.saldoAwal),totalMasuk=sumColumn(dataStore.pemasukan),totalKeluar=sumColumn(dataStore.pengeluaran),kasAkhir=totalAwal+totalMasuk-totalKeluar,totalAkhir=sumColumn(dataStore.saldoAkhir);
+  let pemasukanCash=0;dataGlobal.forEach(r=>{if(r[10]&&r[10].toLowerCase().includes('cash'))pemasukanCash+=parseInt(r[9])||0;});
+  let pemasukanPiutang=totalMasuk-pemasukanCash;if(pemasukanPiutang<0)pemasukanPiutang=0;
+  if(dataStore.saldoAwal.length){document.getElementById('boxSaldoAwal').innerHTML=makeTable(dataStore.saldoAwal);document.getElementById('totalSaldoAwal').innerText='Rp '+totalAwal.toLocaleString('id-ID');}
+  if(dataStore.saldoAkhir.length){document.getElementById('boxSaldoAkhir').innerHTML=makeTable(dataStore.saldoAkhir);document.getElementById('totalSaldoAkhir').innerText='Rp '+totalAkhir.toLocaleString('id-ID');}
   document.getElementById('totalPemasukanCash').innerText='Rp '+pemasukanCash.toLocaleString('id-ID');
   document.getElementById('totalPemasukanPiutang').innerText='Rp '+pemasukanPiutang.toLocaleString('id-ID');
   document.getElementById('totalPemasukan').innerText='Rp '+totalMasuk.toLocaleString('id-ID');
-  document.getElementById('boxRumusKas').innerHTML=`
-    <div><b>Saldo Awal + Total Pemasukan</b><br>
-    Rp ${totalAwal.toLocaleString('id-ID')} + Rp ${totalMasuk.toLocaleString('id-ID')} = Rp ${(totalAwal+totalMasuk).toLocaleString('id-ID')}</div>
-    <div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp ${totalKeluar.toLocaleString('id-ID')}</div>
-    <div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp ${kasAkhir.toLocaleString('id-ID')}</div>`;
+  document.getElementById('boxRumusKas').innerHTML=`<div><b>Saldo Awal + Total Pemasukan</b><br>Rp ${totalAwal.toLocaleString('id-ID')} + Rp ${totalMasuk.toLocaleString('id-ID')} = Rp ${(totalAwal+totalMasuk).toLocaleString('id-ID')}</div><div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp ${totalKeluar.toLocaleString('id-ID')}</div><div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp ${kasAkhir.toLocaleString('id-ID')}</div>`;
 }
 
 function uploadFileKeu(tipe){
-  let input=document.createElement('input');
-  input.type='file';input.accept='.csv,.xlsx,.xls';
+  let input=document.createElement('input');input.type='file';input.accept='.csv,.xlsx,.xls';
   input.onchange=e=>{
-    let file=e.target.files[0];
-    if(!file)return;
+    let file=e.target.files[0];if(!file)return;
     let reader=new FileReader();
     reader.onload=ev=>{
       let parsed=[];
-      if(file.name.endsWith('.csv')){
-        let lines=ev.target.result.split('\n');
-        let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
-        for(let i=1;i<lines.length;i++){
-          if(lines[i].trim()){
-            let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
-            let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);
-          }
-        }
-      }else{
-        let wb=XLSX.read(ev.target.result,{type:'binary'});
-        parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
-      }
-      dataStore[tipe]=parsed;
-      localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));
-      showNotification('Upload '+tipe+' berhasil','success');
-      renderKeuangan();
+      if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
+      else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}
+      dataStore[tipe]=parsed;localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));showNotification('Upload '+tipe+' berhasil','success');renderKeuangan();
     };
-    if(file.name.endsWith('.csv'))reader.readAsText(file);
-    else reader.readAsBinaryString(file);
-  };
-  input.click();
+    if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
+  };input.click();
 }
 
 function handleFile(e){
-  let file=e.target.files[0];
-  if(!file)return;
+  let file=e.target.files[0];if(!file)return;
   let reader=new FileReader();
   reader.onload=ev=>{
     let parsed=[];
-    if(file.name.endsWith('.csv')){
-      let lines=ev.target.result.split('\n');
-      let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
-      for(let i=1;i<lines.length;i++){
-        if(lines[i].trim()){
-          let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
-          parsed.push(values);
-        }
-      }
-      dataGlobal=parsed;
-    }else{
-      let wb=XLSX.read(ev.target.result,{type:'binary'});
-      parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""});
-      dataGlobal=parsed.slice(1);
-    }
+    if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));parsed.push(values);}}dataGlobal=parsed;}
+    else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""});dataGlobal=parsed.slice(1);}
     localStorage.setItem('penjualan_data',JSON.stringify(dataGlobal));
     document.getElementById('previewTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:r[0],Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));
     showNotification('Upload berhasil: '+dataGlobal.length+' baris','success');
   };
-  if(file.name.endsWith('.csv'))reader.readAsText(file);
-  else reader.readAsBinaryString(file);
+  if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
 }
 
-function renderPenjualan(){
-  dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
-  if(!dataGlobal.length){
-    document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan. Upload di menu Upload Data Penjualan.</p>';
-    return;
-  }
-  document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:r[0],Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));
-}
-
-function renderRingkasan(){
-  let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0);
-  let totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));
-  document.getElementById('ringkasanContent').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px">
-      <div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div>
-      <div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div>
-    </div>`;
-}
-
-function renderData(){
-  document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:r[0],Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));
-}
-
-function renderPiutang(){
-  if(!document.getElementById('piutangTable'))return;
-  if(!dataPiutang.length){
-    document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';
-    return;
-  }
-  document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);
-}
+function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');if(!dataGlobal.length){document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';return;}document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:r[0],Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));}
+function renderRingkasan(){let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0),totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));document.getElementById('ringkasanContent').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px"><div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div><div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div></div>`;}
+function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:r[0],Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
+function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
 
 function uploadHutang(input){
-  let file=input.files[0];
-  if(!file)return;
+  let file=input.files[0];if(!file)return;
   let reader=new FileReader();
   reader.onload=e=>{
     try{
       let parsed=[];
-      if(file.name.endsWith('.csv')){
-        let lines=e.target.result.split('\n');
-        let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
-        for(let i=1;i<lines.length;i++){
-          if(lines[i].trim()){
-            let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));
-            let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);
-          }
-        }
-      }else{
-        let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
-        parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false});
-      }
-      dataHutang=parseHutangExcelData(parsed);
-      localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
-      showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');
-      renderHutang();
+      if(file.name.endsWith('.csv')){let lines=e.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
+      else{let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false});}
+      dataHutang=parseHutangExcelData(parsed);localStorage.setItem('hutang_data',JSON.stringify(dataHutang));showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');renderHutang();
     }catch(err){showNotification('Gagal baca file: '+err.message,'error');}
   };
-  if(file.name.endsWith('.csv'))reader.readAsText(file);
-  else reader.readAsBinaryString(file);
+  if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
 }
 
 function parseHutangExcelData(rows){
   if(!rows||!rows.length)return[];
   let keys=Object.keys(rows[0]);
   let findKey=syns=>keys.find(k=>syns.some(s=>k.toLowerCase().replace(/[\s_\.]/g,'').includes(s)))||'';
-  let keyTanggal=findKey(['tanggal','tgl','date']);
-  let keySupplier=findKey(['supplier','suplier','vendor']);
-  let keyNominal=findKey(['nominal','hutang','jumlah','total']);
-  let keyBayar=findKey(['bayar','sudahbayar','terbayar','payment']);
-  return rows.map(row=>{
-    let nominal=parseInt(String(row[keyNominal]||'').replace(/[^0-9]/g,''))||0;
-    let bayar=parseInt(String(row[keyBayar]||'').replace(/[^0-9]/g,''))||0;
-    return{tanggal:String(row[keyTanggal]||'-').trim(),supplier:String(row[keySupplier]||'-').trim(),nominal:nominal,bayar:bayar};
-  });
+  let keyTanggal=findKey(['tanggal','tgl','date']),keySupplier=findKey(['supplier','suplier','vendor']),keyNominal=findKey(['nominal','hutang','jumlah','total']),keyBayar=findKey(['bayar','sudahbayar','terbayar','payment']);
+  function excelDateToJS(excelSerial){
+    let num=parseInt(excelSerial);
+    if(!isNaN(num)&&num>40000){let date=new Date(Math.round((num-25569)*86400*1000));let d=String(date.getDate()).padStart(2,'0'),m=String(date.getMonth()+1).padStart(2,'0'),y=date.getFullYear();return `${d}/${m}/${y}`;}
+    return String(excelSerial||'-').trim();
+  }
+  return rows.map(row=>{let nominal=parseInt(String(row[keyNominal]||'').replace(/[^0-9]/g,''))||0,bayar=parseInt(String(row[keyBayar]||'').replace(/[^0-9]/g,''))||0;return{tanggal:excelDateToJS(row[keyTanggal]),supplier:String(row[keySupplier]||'-').trim(),nominal:nominal,bayar:bayar};});
 }
 
 function renderHutang(){
   if(!document.getElementById('hutangTableScroll'))return;
-  // Load ulang dari localStorage biar nggak hilang
   dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-  let today=new Date();let thisMonth=today.getMonth();let nextMonth=thisMonth===11?0:thisMonth+1;let thisYear=today.getFullYear();
+  let today=new Date(),thisMonth=today.getMonth(),nextMonth=thisMonth===11?0:thisMonth+1,thisYear=today.getFullYear();
   let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
   dataHutang.forEach(r=>{
-    let nom=r.nominal||0,bayar=r.bayar||0;
-    totalBayar+=bayar;totalBelumBayar+=(nom-bayar);
-    try{
-      let parts=r.tanggal.split(/[\/\-]/);
-      if(parts.length===3){
-        let bln=parseInt(parts[1])-1,thn=parseInt(parts[2]);if(thn<100)thn+=2000;
-        if(bln===thisMonth&&thn===thisYear)tagihanBulanIni+=nom;
-        if(bln===nextMonth&&thn===(nextMonth===0?thisYear+1:thisYear))tagihanBulanDepan+=nom;
-      }
-    }catch(e){}
+    let nom=r.nominal||0,bayar=r.bayar||0;totalBayar+=bayar;totalBelumBayar+=(nom-bayar);
+    try{let parts=r.tanggal.split('/');if(parts.length===3){let d=parseInt(parts[0]),bln=parseInt(parts[1])-1,thn=parseInt(parts[2]);if(bln===thisMonth&&thn===thisYear)tagihanBulanIni+=nom;if(bln===nextMonth&&thn===(nextMonth===0?thisYear+1:thisYear))tagihanBulanDepan+=nom;}}catch(e){}
   });
   document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
   document.getElementById('totalTagihanBulanDepan').innerText='Rp '+tagihanBulanDepan.toLocaleString('id-ID');
   document.getElementById('totalHutangTerbayar').innerText='Rp '+totalBayar.toLocaleString('id-ID');
   document.getElementById('totalHutangBelumBayar').innerText='Rp '+totalBelumBayar.toLocaleString('id-ID');
-  if(!dataHutang.length){
-    document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';
-    return;
-  }
+  if(!dataHutang.length){document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';return;}
   let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th></tr></thead><tbody>';
   dataHutang.forEach(r=>html+=`<tr><td>${r.tanggal}</td><td><b>${r.supplier}</b></td><td>Rp ${(r.nominal||0).toLocaleString('id-ID')}</td><td>Rp ${(r.bayar||0).toLocaleString('id-ID')}</td></tr>`);
   document.getElementById('hutangTableScroll').innerHTML=html+'</tbody></table>';
 }
 
-function backupData(){
-  let backup={penjualan:dataGlobal,keuangan:dataStore,piutang:dataPiutang,hutang:dataHutang,tanggal:new Date().toISOString()};
-  let blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
-  let url=URL.createObjectURL(blob);
-  let a=document.createElement('a');a.href=url;a.download='backup_gajahmas_'+new Date().toISOString().split('T')[0]+'.json';a.click();
-  showNotification('Backup berhasil diunduh','success');
-}
+function backupData(){let backup={penjualan:dataGlobal,keuangan:dataStore,piutang:dataPiutang,hutang:dataHutang,tanggal:new Date().toISOString()};let blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download='backup_gajahmas_'+new Date().toISOString().split('T')[0]+'.json';a.click();showNotification('Backup berhasil diunduh','success');}
 
 ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]'));
 dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
