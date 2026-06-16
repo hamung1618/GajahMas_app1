@@ -182,7 +182,7 @@ function show(id){
   if(id==='ringkasan')renderRingkasan();
   if(id==='data')renderData();
   if(id==='piutang'){dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');renderPiutang();}
-  if(id==='hutang'){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
+  if(id.includes('hutang')){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
 }
 
 function makeTable(data){
