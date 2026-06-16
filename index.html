@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gajah Mas - Private Data</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-(function(l){
-  if(l.search[1]==='/'){
-    var decoded=l.search.slice(1).split('&').map(function(s){return s.replace(/~and~/g,'&')}).join('?');
-    window.history.replaceState(null,null,l.pathname.slice(0,-1)+decoded+l.hash);
-  }
-})(window.location);
-</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f6fa;color:#333;font-size:14px}
@@ -133,7 +125,6 @@ if(localStorage.getItem('gajahmas_login')==='1'){
   document.getElementById('app').style.display='block';
 }
 
-// Fungsi konversi tanggal universal
 function formatDate(val){
   if(!val||val==='-')return '-';
   let str=String(val).trim();
@@ -228,7 +219,7 @@ function uploadFileKeu(tipe){
       let parsed=[];
       if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
       else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}
-      dataStore[tipe]=parsed;
+      dataStore=parsed;
       localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));
       showNotification('Upload '+tipe+' berhasil','success');
       renderKeuangan();
@@ -285,7 +276,6 @@ function uploadHutang(input){
   reader.readAsBinaryString(file);
 }
 
-// FIX RUMUS TOTAL HUTANG
 function renderHutang(){
   if(!document.getElementById('hutangTableScroll'))return;
   dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
@@ -296,7 +286,7 @@ function renderHutang(){
     let nom=r.nominal||0,bayar=r.bayar||0;
     totalBayar+=bayar;
     totalBelumBayar+=(nom-bayar);
-    tagihanBulanIni+=nom; // Hitung semua sebagai bulan ini
+    tagihanBulanIni+=nom;
   });
 
   document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
