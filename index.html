@@ -246,46 +246,103 @@ function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan
 function renderRingkasan(){let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0),totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));document.getElementById('ringkasanContent').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px"><div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div><div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div></div>`;}
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
 function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
-
 function uploadHutang(input){
   let file=input.files[0];if(!file)return;
   let reader=new FileReader();
   reader.onload=e=>{
     try{
-      let parsed=[];
-      if(file.name.endsWith('.csv')){let lines=e.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
-      else{let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false});}
-      dataHutang=parseHutangExcelData(parsed);localStorage.setItem('hutang_data',JSON.stringify(dataHutang));showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');renderHutang();
+      let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      let ws=wb.Sheets[wb.SheetNames[0]];
+      let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+      let headers=rows[0].map(h=>String(h).trim());
+      let idxTgl=headers.findIndex(h=>h.toLowerCase().includes('tanggal')||h.toLowerCase().includes('tgl'));
+      let idxSup=headers.findIndex(h=>h.toLowerCase().includes('supplier')||h.toLowerCase().includes('suplier'));
+      let idxNom=headers.findIndex(h=>h.toLowerCase().includes('nominal')||h.toLowerCase().includes('hutang'));
+      let idxBayar=headers.findIndex(h=>h.toLowerCase().includes('bayar')||h.toLowerCase().includes('terbayar'));
+
+      dataHutang=rows.slice(1).filter(r=>r[idxSup]).map((r,i)=>({
+        id:i+Date.now(),
+        tanggal:formatDate(r[idxTgl]),
+        supplier:r[idxSup],
+        nominal:parseInt(String(r[idxNom]||'0').replace(/[^0-9]/g,''))||0,
+        bayar:parseInt(String(r[idxBayar]||'0').replace(/[^0-9]/g,''))||0
+      }));
+      localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+      showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');
+      renderHutang();
     }catch(err){showNotification('Gagal baca file: '+err.message,'error');}
   };
-  if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
-}
-
-function parseHutangExcelData(rows){
-  if(!rows||!rows.length)return[];
-  let keys=Object.keys(rows[0]);
-  let findKey=syns=>keys.find(k=>syns.some(s=>k.toLowerCase().replace(/[\s_\.]/g,'').includes(s)))||'';
-  let keyTanggal=findKey(['tanggal','tgl','date']),keySupplier=findKey(['supplier','suplier','vendor']),keyNominal=findKey(['nominal','hutang','jumlah','total']),keyBayar=findKey(['bayar','sudahbayar','terbayar','payment']);
-  return rows.map(row=>{let nominal=parseInt(String(row[keyNominal]||'').replace(/[^0-9]/g,''))||0,bayar=parseInt(String(row[keyBayar]||'').replace(/[^0-9]/g,''))||0;return{tanggal:formatDate(row[keyTanggal]),supplier:String(row[keySupplier]||'-').trim(),nominal:nominal,bayar:bayar};});
+  reader.readAsBinaryString(file);
 }
 
 function renderHutang(){
   if(!document.getElementById('hutangTableScroll'))return;
   dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-  let today=new Date(),thisMonth=today.getMonth(),nextMonth=thisMonth===11?0:thisMonth+1,thisYear=today.getFullYear();
+
+  let today=new Date(),thisMonth=today.getMonth(),thisYear=today.getFullYear();
+  let nextMonth=thisMonth===11?0:thisMonth+1,nextYear=thisMonth===11?thisYear+1:thisYear;
+
   let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
+
   dataHutang.forEach(r=>{
-    let nom=r.nominal||0,bayar=r.bayar||0;totalBayar+=bayar;totalBelumBayar+=(nom-bayar);
-    try{let parts=r.tanggal.split('/');if(parts.length===3){let d=parseInt(parts[0]),bln=parseInt(parts[1])-1,thn=parseInt(parts[2]);if(bln===thisMonth&&thn===thisYear)tagihanBulanIni+=nom;if(bln===nextMonth&&thn===(nextMonth===0?thisYear+1:thisYear))tagihanBulanDepan+=nom;}}catch(e){}
+    let nom=r.nominal||0,bayar=r.bayar||0;
+    totalBayar+=bayar;
+    totalBelumBayar+=(nom-bayar);
+    try{
+      let parts=r.tanggal.split('/');
+      if(parts.length===3){
+        let bln=parseInt(parts[1])-1,thn=parseInt(parts[2]);
+        if(bln===thisMonth&&thn===thisYear)tagihanBulanIni+=nom;
+        if(bln===nextMonth&&thn===nextYear)tagihanBulanDepan+=nom;
+      }
+    }catch(e){}
   });
+
   document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
   document.getElementById('totalTagihanBulanDepan').innerText='Rp '+tagihanBulanDepan.toLocaleString('id-ID');
   document.getElementById('totalHutangTerbayar').innerText='Rp '+totalBayar.toLocaleString('id-ID');
   document.getElementById('totalHutangBelumBayar').innerText='Rp '+totalBelumBayar.toLocaleString('id-ID');
-  if(!dataHutang.length){document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';return;}
-  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th></tr></thead><tbody>';
-  dataHutang.forEach(r=>html+=`<tr><td>${r.tanggal}</td><td><b>${r.supplier}</b></td><td>Rp ${(r.nominal||0).toLocaleString('id-ID')}</td><td>Rp ${(r.bayar||0).toLocaleString('id-ID')}</td></tr>`);
+
+  if(!dataHutang.length){
+    document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';
+    return;
+  }
+
+  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th><th>Aksi</th></tr></thead><tbody>';
+  dataHutang.forEach(r=>{
+    html+=`<tr>
+      <td>${r.tanggal}</td>
+      <td><b>${r.supplier}</b></td>
+      <td>Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
+      <td>Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
+      <td>
+        <button class="btn-aksi btn-edit" onclick="editHutang(${r.id})">✏️</button>
+        <button class="btn-aksi" style="background:#dc3545;color:white" onclick="hapusHutang(${r.id})">🗑️</button>
+      </td>
+    </tr>`;
+  });
   document.getElementById('hutangTableScroll').innerHTML=html+'</tbody></table>';
+}
+
+function editHutang(id){
+  let item=dataHutang.find(x=>x.id===id);
+  if(!item)return;
+  let bayarBaru=prompt('Edit Sudah Bayar untuk '+item.supplier, item.bayar);
+  if(bayarBaru===null)return;
+  bayarBaru=parseInt(String(bayarBaru).replace(/[^0-9]/g,''))||0;
+  if(bayarBaru>item.nominal){alert('Sudah Bayar tidak boleh > Nominal');return;}
+  item.bayar=bayarBaru;
+  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+  renderHutang();
+  showNotification('Data berhasil diupdate','success');
+}
+
+function hapusHutang(id){
+  if(!confirm('Yakin hapus data ini?'))return;
+  dataHutang=dataHutang.filter(x=>x.id!==id);
+  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+  renderHutang();
+  showNotification('Data berhasil dihapus','success');
 }
 
 function backupData(){let backup={penjualan:dataGlobal,keuangan:dataStore,piutang:dataPiutang,hutang:dataHutang,tanggal:new Date().toISOString()};let blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download='backup_gajahmas_'+new Date().toISOString().split('T')[0]+'.json';a.click();showNotification('Backup berhasil diunduh','success');}
