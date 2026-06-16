@@ -61,7 +61,7 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
     <h1>Gajah Mas</h1>
     <p>Masukkan PIN untuk masuk</p>
     <input type="password" id="pin" placeholder="••••" maxlength="6" inputmode="numeric" onkeypress="if(event.key==='Enter') login()">
-    <button onclick="login()">Masuk</button>
+    <button onclick="localStorage.setItem('gajahmas_login','1');location.reload()">Masuk</button>
     <p style="margin-top:15px;font-size:11px;color:#999">PIN default: 1234</p>
   </div>
 </div>
