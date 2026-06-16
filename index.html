@@ -43,6 +43,14 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
 #notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .notification-success{background:#28a745}
 .notification-error{background:#dc3545}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px}
+.card{padding:20px;border-radius:8px;color:white}
+.card-blue{background:linear-gradient(135deg,#004aad,#0066cc)}
+.card-yellow{background:linear-gradient(135deg,#ffc107,#ffca2c);color:#333}
+.card-red{background:linear-gradient(135deg,#dc3545,#c82333)}
+.card-green{background:linear-gradient(135deg,#28a745,#218838)}
+.card h4{font-size:13px;font-weight:500;margin-bottom:8px;opacity:0.9}
+.card p{font-size:24px;font-weight:700}
 @media(max-width:768px){
 .container{flex-direction:column}
 .sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-bottom:1px solid #e0e0e0}
@@ -243,9 +251,59 @@ function handleFile(e){
 }
 
 function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');if(!dataGlobal.length){document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';return;}document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));}
-function renderRingkasan(){let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0),totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));document.getElementById('ringkasanContent').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px"><div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div><div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div></div>`;}
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
 function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
+
+// RINGKASAN UPGRADE - DASHBOARD LENGKAP
+function renderRingkasan(){
+  dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
+  dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');
+  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
+  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]'));
+
+  let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0);
+  let totalPiutang=sumColumn(dataPiutang);
+  let totalHutangBelumBayar=dataHutang.reduce((s,r)=>s+((r.nominal||0)-(r.bayar||0)),0);
+  let totalAwal=sumColumn(dataStore.saldoAwal);
+  let totalMasuk=sumColumn(dataStore.pemasukan);
+  let totalKeluar=sumColumn(dataStore.pengeluaran);
+  let kasAkhir=totalAwal+totalMasuk-totalKeluar;
+  let labaKotor=totalPenjualan-totalKeluar;
+
+  document.getElementById('ringkasanContent').innerHTML=`
+    <div class="card-grid">
+      <div class="card card-blue">
+        <h4>Total Penjualan</h4>
+        <p>Rp ${totalPenjualan.toLocaleString('id-ID')}</p>
+      </div>
+      <div class="card card-yellow">
+        <h4>Total Piutang</h4>
+        <p>Rp ${totalPiutang.toLocaleString('id-ID')}</p>
+      </div>
+      <div class="card card-red">
+        <h4>Total Hutang Belum Bayar</h4>
+        <p>Rp ${totalHutangBelumBayar.toLocaleString('id-ID')}</p>
+      </div>
+      <div class="card card-green">
+        <h4>Kas Akhir</h4>
+        <p>Rp ${kasAkhir.toLocaleString('id-ID')}</p>
+      </div>
+      <div class="card card-blue">
+        <h4>Laba Kotor</h4>
+        <p>Rp ${labaKotor.toLocaleString('id-ID')}</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <h4>Detail Keuangan</h4>
+      <table>
+        <tr><td>Saldo Awal</td><td style="text-align:right"><b>Rp ${totalAwal.toLocaleString('id-ID')}</b></td></tr>
+        <tr><td>Total Pemasukan</td><td style="text-align:right"><b>Rp ${totalMasuk.toLocaleString('id-ID')}</b></td></tr>
+        <tr><td>Total Pengeluaran</td><td style="text-align:right"><b>Rp ${totalKeluar.toLocaleString('id-ID')}</b></td></tr>
+        <tr style="border-top:2px solid #004aad"><td>Kas Akhir</td><td style="text-align:right"><b>Rp ${kasAkhir.toLocaleString('id-ID')}</b></td></tr>
+      </table>
+    </div>
+  `;
+}
 
 function uploadHutang(input){
   let file=input.files[0];if(!file)return;
