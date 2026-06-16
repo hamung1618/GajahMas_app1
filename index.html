@@ -245,7 +245,28 @@ function handleFile(e){
 function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');if(!dataGlobal.length){document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';return;}document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));}
 function renderRingkasan(){let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0),totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));document.getElementById('ringkasanContent').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px"><div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div><div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div></div>`;}
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
-function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
+function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);
+                        }
+
+  function formatDate(val){
+  if(!val) return "";
+  let d = new Date(val);
+  if(!isNaN(d)){
+    let dd = String(d.getDate()).padStart(2,'0');
+    let mm = String(d.getMonth()+1).padStart(2,'0');
+    let yy = d.getFullYear();
+    return dd+'/'+mm+'/'+yy;
+  }
+  // Kalau udah format 6/2/26
+  let parts = String(val).split('/');
+  if(parts.length===3){
+    let dd = parts[0].padStart(2,'0');
+    let mm = parts[1].padStart(2,'0');
+    let yy = parts[2].length===2? '20'+parts[2] : parts[2];
+    return dd+'/'+mm+'/'+yy;
+  }
+  return val;
+}
 function uploadHutang(input){
   let file=input.files[0];if(!file)return;
   let reader=new FileReader();
