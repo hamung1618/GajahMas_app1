@@ -133,13 +133,11 @@ if(localStorage.getItem('gajahmas_login')==='1'){
   document.getElementById('app').style.display='block';
 }
 
-// Fungsi konversi tanggal universal: Excel serial, 6/2/26, 02/06/2026
+// Fungsi konversi tanggal universal
 function formatDate(val){
   if(!val||val==='-')return '-';
   let str=String(val).trim();
   let num=parseInt(str);
-
-  // Excel serial date
   if(!isNaN(num)&&num>40000&&num<60000){
     let date=new Date(Math.round((num-25569)*86400*1000));
     let d=String(date.getDate()).padStart(2,'0');
@@ -147,8 +145,6 @@ function formatDate(val){
     let y=date.getFullYear();
     return `${d}/${m}/${y}`;
   }
-
-  // Format 6/2/26 atau 6/2/2026
   if(str.includes('/')){
     let parts=str.split('/');
     if(parts.length===3){
@@ -289,12 +285,10 @@ function uploadHutang(input){
   reader.readAsBinaryString(file);
 }
 
+// FIX RUMUS TOTAL HUTANG
 function renderHutang(){
   if(!document.getElementById('hutangTableScroll'))return;
   dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-
-  let today=new Date(),thisMonth=today.getMonth(),thisYear=today.getFullYear();
-  let nextMonth=thisMonth===11?0:thisMonth+1,nextYear=thisMonth===11?thisYear+1:thisYear;
 
   let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
 
@@ -302,18 +296,11 @@ function renderHutang(){
     let nom=r.nominal||0,bayar=r.bayar||0;
     totalBayar+=bayar;
     totalBelumBayar+=(nom-bayar);
-    try{
-      let parts=r.tanggal.split('/');
-      if(parts.length===3){
-        let bln=parseInt(parts[1])-1,thn=parseInt(parts[2]);
-        if(bln===thisMonth&&thn===thisYear)tagihanBulanIni+=nom;
-        if(bln===nextMonth&&thn===nextYear)tagihanBulanDepan+=nom;
-      }
-    }catch(e){}
+    tagihanBulanIni+=nom; // Hitung semua sebagai bulan ini
   });
 
   document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
-  document.getElementById('totalTagihanBulanDepan').innerText='Rp '+tagihanBulanDepan.toLocaleString('id-ID');
+  document.getElementById('totalTagihanBulanDepan').innerText='Rp 0';
   document.getElementById('totalHutangTerbayar').innerText='Rp '+totalBayar.toLocaleString('id-ID');
   document.getElementById('totalHutangBelumBayar').innerText='Rp '+totalBelumBayar.toLocaleString('id-ID');
 
@@ -328,8 +315,8 @@ function renderHutang(){
     html+=`<tr>
       <td>${r.tanggal}</td>
       <td><b>${r.supplier}</b></td>
-      <td>Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
-      <td>Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
       <td><span class="badge ${status=='Lunas'?'badge-success':'badge-warning'}">${status}</span></td>
       <td>
         <button class="btn-aksi btn-edit" onclick="editHutang(${r.id})">✏️</button>
