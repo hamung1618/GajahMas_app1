@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gajah Mas - Private Data</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f6fa;color:#333;font-size:14px}
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#004aad 0%,#0066cc 100%)}
+.login-box{background:white;padding:40px 35px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);width:100%;max-width:380px;text-align:center}
+.login-box h1{color:#004aad;margin-bottom:10px;font-size:26px}
+.login-box p{color:#666;margin-bottom:25px;font-size:13px}
+.login-box input{width:100%;padding:12px 15px;margin-bottom:15px;border:2px solid #e0e0e0;border-radius:6px;font-size:16px;text-align:center;letter-spacing:3px}
+.login-box input:focus{outline:none;border-color:#004aad}
+.login-box button{width:100%;padding:12px;background:#004aad;color:white;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer}
+.login-box button:hover{background:#003580}
+#app{display:none}
+header{background:#004aad;color:white;padding:14px 25px;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:18px;font-weight:600}
+header button{background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:4px;cursor:pointer;font-size:13px}
+.container{display:flex;min-height:calc(100vh - 54px)}
+.sidebar{width:240px;background:white;border-right:1px solid #e0e0e0;padding:15px 0;overflow-y:auto}
+.sidebar button{display:block;width:100%;text-align:left;padding:11px 20px;background:none;border:none;cursor:pointer;font-size:13px;color:#555;border-left:3px solid transparent}
+.sidebar button:hover{background:#f0f4f8;color:#004aad}
+.sidebar button.active{background:#e6f0ff;color:#004aad;border-left-color:#004aad;font-weight:600}
+.main{flex:1;padding:25px;overflow-y:auto}
+.table-wrap{background:white;border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.table-wrap h3{margin-bottom:15px;color:#004aad;font-size:16px}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th{background:#004aad;color:white;padding:11px 12px;text-align:left;font-weight:600;font-size:13px}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
+tr:hover td{background:#f8f9fa}
+tr.total-row td{background:#e6f0ff;font-weight:700;color:#004aad;border-top:2px solid #004aad}
+input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;background:#fafafa;width:100%;cursor:pointer}
+.btn-aksi{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:5px}
+.btn-simpan{background:#28a745;color:white}
+.btn-edit{background:#ffc107;color:#333}
+#notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.notification-success{background:#28a745}
+.notification-error{background:#dc3545}
+.card-grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin-bottom:20px}
+.card-total{background:white;padding:15px 20px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.05);border-left:4px solid #004aad}
+.card-total p{font-size:12px;color:#666;margin-bottom:4px}
+.card-total.angka{font-size:18px;font-weight:700;color:#004aad}
+.card-sales-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px;margin-bottom:20px}
+.card-sales{background:white;padding:18px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.05);border:1px solid #e0e0e0}
+.card-sales h4{font-size:14px;color:#004aad;margin-bottom:12px;font-weight:700;text-transform:uppercase}
+.card-sales.row{margin-bottom:8px;font-size:13px}
+.card-sales.row b{color:#333}
+.card-sales.section{margin-top:10px;padding-top:8px;border-top:1px dashed #ddd}
+@media(max-width:768px){.container{flex-direction:column}.sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-bottom:1px solid #e0e0e0}.sidebar button{white-space:nowrap;border-left:none;border-bottom:3px solid transparent}.sidebar button.active{border-bottom-color:#004aad}.main{padding:15px}}
+</style>
+</head>
+<body>
+
+<div id="loginPage">
+  <div class="login-box">
+    <h1>Gajah Mas</h1>
+    <p>Masukkan PIN untuk masuk</p>
+    <input type="password" id="pin" placeholder="••••" maxlength="6" inputmode="numeric" onkeypress="if(event.key==='Enter') login()">
+    <button onclick="login()">Masuk</button>
+    <p style="margin-top:15px;font-size:11px;color:#999">PIN default: 1234</p>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>Gajah Mas - Private Data</h1>
+    <button onclick="logout()">Logout</button>
+  </header>
+  <div class="container">
+    <div class="sidebar">
+      <button onclick="show('kas')" class="active">Kas</button>
+      <button onclick="show('penjualan')">Penjualan</button>
+      <button onclick="show('ringkasan')">Ringkasan</button>
+      <button onclick="show('data')">Data Tabel</button>
+      <button onclick="show('piutang')">Piutang</button>
+      <button onclick="show('stok')">Stok Barang</button>
+      <button onclick="show('hutang')">Hutang Dagang</button>
+      <button onclick="show('customer')">Customer</button>
+      <button onclick="show('supplier')">Supplier</button>
+      <button onclick="show('karyawan')">Data Karyawan</button>
+      <button onclick="show('aset')">Data Aset</button>
+      <button onclick="show('backup')">Backup Data</button>
+      <button onclick="show('upload')">Upload Data Penjualan</button>
+    </div>
+    <div class="main" id="content"></div>
+  </div>
+</div>
+
+<div id="notification"></div>
+
+<script>
+let dataStore={saldoAwal:[],pemasukan:[],pengeluaran:[],saldoAkhir:[]};
+let dataGlobal=[];
+let dataPiutang=[];
+let dataHutang=JSON.parse(localStorage.getItem('hutang_data') || '[]');
+
+const PIN_BENAR = '1234';
+
+function showNotification(msg,type='success'){
+  let notif=document.getElementById('notification');
+  notif.className='notification-'+type;
+  notif.textContent=msg;
+  notif.style.display='block';
+  setTimeout(()=>notif.style.display='none',3000);
+}
+
+function login(){
+  let pin=document.getElementById('pin').value.trim();
+  if(pin===PIN_BENAR){
+    localStorage.setItem('gajahmas_login','1');
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='block';
+    show('kas');
+  }else{
+    showNotification('PIN salah','error');
+    document.getElementById('pin').value='';
+    document.getElementById('pin').focus();
+  }
+}
+
+function logout(){
+  localStorage.removeItem('gajahmas_login');
+  location.reload();
+}
+
+// Auto login kalau sudah login sebelumnya
+window.onload=function(){
+  if(localStorage.getItem('gajahmas_login')==='1'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='block';
+    show('kas');
+  }
+}
+
+function formatDate(val){
+  if(!val||val==='-')return '-';
+  let str=String(val).trim();
+  let num=parseInt(str);
+  if(!isNaN(num)&&num>40000&&num<60000){
+    let date=new Date(Math.round((num-25569)*86400*1000));
+    let d=String(date.getDate()).padStart(2,'0');
+    let m=String(date.getMonth()+1).padStart(2,'0');
+    let y=date.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+  if(str.includes('/')){
+    let parts=str.split('/');
+    if(parts.length===3){
+      let dd=String(parts[0]).padStart(2,'0');
+      let mm=String(parts[1]).padStart(2,'0');
+      let yy=parts[2].length===2?'20'+parts[2]:parts[2];
+      return `${dd}/${mm}/${yy}`;
+    }
+  }
+  return str;
+}
+
+let pages={
+  kas:`
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-bottom:15px">
+      <div class="table-wrap"><h4>SALDO AWAL</h4><div id="boxSaldoAwal"><p style="color:#666;font-size:13px">Belum ada data</p></div><p style="margin-top:10px"><b>Total Saldo Awal : <span id="totalSaldoAwal">Rp 0</span></b></p></div>
+      <div class="table-wrap"><h4>SALDO AKHIR</h4><div id="boxSaldoAkhir"><p style="color:#666;font-size:13px">Belum ada data</p></div><p style="margin-top:10px"><b>Total Saldo Akhir : <span id="totalSaldoAkhir">Rp 0</span></b></p></div>
+    </div>
+    <div class="table-wrap" style="padding:15px 20px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2"><div><b>Uang Masuk Dari Penjualan Cash :</b></div><div><b><span id="totalPemasukanCash">Rp 0</span></b></div><div><b>Uang Masuk Dari Pembayaran Piutang :</b></div><div><b><span id="totalPemasukanPiutang">Rp 0</span></b></div></div><div style="text-align:center;margin-top:12px;padding-top:12px;border-top:1px solid #ddd"><b>Total Uang Masuk : <span id="totalPemasukan">Rp 0</span></b></div></div>
+    <div class="table-wrap" id="boxRumusKas" style="border:2px solid #004aad;padding:15px 20px;line-height:2"><div><b>Saldo Awal + Total Pemasukan</b><br>Rp 0 + Rp 0 = Rp 0</div><div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp 0</div><div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp 0</div></div>
+    <div style="margin-top:20px;padding-top:15px;border-top:2px solid #004aad;display:flex;gap:8px;flex-wrap:wrap"><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAwal')">Upload Saldo Awal</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pemasukan')">Upload Pemasukan</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('pengeluaran')">Upload Pengeluaran</button><button class="btn-aksi btn-simpan" onclick="uploadFileKeu('saldoAkhir')">Upload Saldo Akhir</button></div>`,
+  hutang:`
+    <div class="table-wrap" style="margin-bottom:15px;padding:15px 20px"><h3 style="margin:0 0 15px 0">Hutang Dagang</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2"><div><b>Total Tagihan Bulan ini :</b></div><div><b><span id="totalTagihanBulanIni">Rp 0</span></b></div><div><b>Total Tagihan Bulan Depan :</b></div><div><b><span id="totalTagihanBulanDepan">Rp 0</span></b></div><div><b>Terbayar :</b></div><div><b><span id="totalHutangTerbayar">Rp 0</span></b></div><div><b>Belum Terbayar :</b></div><div><b><span id="totalHutangBelumBayar">Rp 0</span></b></div></div></div>
+    <div class="table-wrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px"><h3 style="margin:0">Daftar Hutang Supplier</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="hutangFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="uploadHutang(this)"><button class="btn-aksi btn-simpan" onclick="document.getElementById('hutangFile').click()">Upload Hutang</button><button class="btn-aksi btn-edit" onclick="renderHutang()">Reset Filter</button></div></div><div class="table-scroll" id="hutangTableScroll"><p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p></div></div>`,
+  penjualan:`<div class="table-wrap"><h3>Data Penjualan</h3><div class="table-scroll" id="penjualanTable"></div></div>`,
+  ringkasan:`<div class="table-wrap"><h3>Ringkasan Penjualan</h3><div id="ringkasanContent"></div></div>`,
+  data:`<div class="table-wrap"><h3>Data Tabel</h3><div class="table-scroll" id="dataTable"></div></div>`,
+  piutang:`<div class="table-wrap"><h3>Piutang Customer</h3><div class="table-scroll" id="piutangTable"></div></div>`,
+  stok:`<div class="table-wrap"><h3>Stok Barang</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
+  customer:`<div class="table-wrap"><h3>Data Customer</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
+  supplier:`<div class="table-wrap"><h3>Data Supplier</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
+  karyawan:`<div class="table-wrap"><h3>Data Karyawan</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
+  aset:`<div class="table-wrap"><h3>Data Aset</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
+  backup:`<div class="table-wrap"><h3>Backup Data</h3><button class="btn-aksi btn-simpan" onclick="backupData()">Download Backup JSON</button></div>`,
+  upload:`<div class="table-wrap"><h3>Upload Data Penjualan</h3><input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFile(event)"><div id="previewTable" style="margin-top:20px"></div></div>`
+};
+
+function show(id){
+  document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
+  if(event && event.target) event.target.classList.add('active');
+  document.getElementById('content').innerHTML=pages[id]||'<p>Halaman tidak ditemukan</p>';
+  if(id==='kas')renderKeuangan();
+  if(id==='penjualan')renderPenjualan();
+  if(id==='ringkasan')renderRingkasan();
+  if(id==='data')renderData();
+  if(id==='piutang'){dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');renderPiutang();}
+  if(id==='hutang'){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
+}
+
+function makeTable(data){
+  if(!data||!data.length)return'<p style="color:#666">Belum ada data</p>';
+  let html='<table><thead><tr>';Object.keys(data[0]).forEach(k=>html+=`<th>${k}</th>`);html+='</tr></thead><tbody>';
+  data.forEach(r=>{html+='<tr>';Object.entries(r).forEach(([k,v])=>{
+    if(k.toLowerCase().includes('tanggal')||k.toLowerCase().includes('tgl'))v=formatDate(v);
+    html+=`<td>${v}</td>`;
+  });html+='</tr>';});
+  return html+'</tbody></table>';
+}
+
+function sumColumn(arr,key='Nominal'){return arr.reduce((s,r)=>s+(parseInt(String(r[key]||'0').replace(/[^0-9]/g,''))||0),0);}
+
+function renderKeuangan(){
+  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]'));
+  let totalAwal=sumColumn(dataStore.saldoAwal),totalMasuk=sumColumn(dataStore.pemasukan),totalKeluar=sumColumn(dataStore.pengeluaran),kasAkhir=totalAwal+totalMasuk-totalKeluar,totalAkhir=sumColumn(dataStore.saldoAkhir);
+  let pemasukanCash=0;dataGlobal.forEach(r=>{if(r[10]&&r[10].toLowerCase().includes('cash'))pemasukanCash+=parseInt(r[9])||0;});
+  let pemasukanPiutang=totalMasuk-pemasukanCash;if(pemasukanPiutang<0)pemasukanPiutang=0;
+  if(dataStore.saldoAwal.length){document.getElementById('boxSaldoAwal').innerHTML=makeTable(dataStore.saldoAwal);document.getElementById('totalSaldoAwal').innerText='Rp '+totalAwal.toLocaleString('id-ID');}
+  if(dataStore.saldoAkhir.length){document.getElementById('boxSaldoAkhir').innerHTML=makeTable(dataStore.saldoAkhir);document.getElementById('totalSaldoAkhir').innerText='Rp '+totalAkhir.toLocaleString('id-ID');}
+  document.getElementById('totalPemasukanCash').innerText='Rp '+pemasukanCash.toLocaleString('id-ID');
+  document.getElementById('totalPemasukanPiutang').innerText='Rp '+pemasukanPiutang.toLocaleString('id-ID');
+  document.getElementById('totalPemasukan').innerText='Rp '+totalMasuk.toLocaleString('id-ID');
+  document.getElementById('boxRumusKas').innerHTML=`<div><b>Saldo Awal + Total Pemasukan</b><br>Rp ${totalAwal.toLocaleString('id-ID')} + Rp ${totalMasuk.toLocaleString('id-ID')} = Rp ${(totalAwal+totalMasuk).toLocaleString('id-ID')}</div><div style="margin-top:12px"><b>Total Pengeluaran</b><br>Rp ${totalKeluar.toLocaleString('id-ID')}</div><div style="margin-top:12px;padding-top:12px;border-top:2px solid #004aad"><b>Kas Akhir</b><br>Rp ${kasAkhir.toLocaleString('id-ID')}</div>`;
+}
+
+function uploadFileKeu(tipe){
+  let input=document.createElement('input');input.type='file';input.accept='.csv,.xlsx,.xls';
+  input.onchange=e=>{
+    let file=e.target.files[0];if(!file)return;
+    let reader=new FileReader();
+    reader.onload=ev=>{
+      let parsed=[];
+      if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
+      else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}
+      dataStore=parsed;
+      localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));
+      showNotification('Upload '+tipe+' berhasil','success');
+      renderKeuangan();
+    };
+    if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
+  };input.click();
+}
+
+function handleFile(e){
+  let file=e.target.files[0];if(!file)return;
+  let reader=new FileReader();
+  reader.onload=ev=>{
+    let parsed=[];
+    if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));parsed.push(values);}}dataGlobal=parsed;}
+    else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:""});dataGlobal=parsed.slice(1);}
+    localStorage.setItem('penjualan_data',JSON.stringify(dataGlobal));
+    document.getElementById('previewTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));
+    showNotification('Upload berhasil: '+dataGlobal.length+' baris','success');
+  };
+  if(file.name.endsWith('.csv'))reader.readAsText(file);else reader.readAsBinaryString(file);
+}
+
+function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');if(!dataGlobal.length){document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';return;}document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));}
+function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
+function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
+
+// RINGKASAN SESUAI SCREENSHOT
+function renderRingkasan(){
+  dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
+  if(!dataGlobal.length){
+    document.getElementById('ringkasanContent').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';
+    return;
+  }
+
+  let salesList=['HAFID','JOSSY','RAJU'];
+  let rekap={};
+  salesList.forEach(s=>rekap[s]={cash:0,cashProfit:0,tempo:0,tempoProfit:0});
+
+  let totalBulan=0, profitBulan=0, totalTunai=0, profitTunai=0, totalTempo=0, profitTempo=0;
+
+  dataGlobal.forEach(r=>{
+    let sales=String(r[3]||'').toUpperCase().trim();
+    let nominal=parseInt(r[8])||0;
+    let profit=parseInt(r[9])||0;
+    let metode=String(r[10]||'').toLowerCase();
+
+    totalBulan+=nominal;
+    profitBulan+=profit;
+
+    if(metode.includes('cash')||metode.includes('tunai')){
+      totalTunai+=nominal;
+      profitTunai+=profit;
+      if(rekap[sales]){rekap[sales].cash+=nominal;rekap[sales].cashProfit+=profit;}
+    }else{
+      totalTempo+=nominal;
+      profitTempo+=profit;
+      if(rekap[sales]){rekap[sales].tempo+=nominal;rekap[sales].tempoProfit+=profit;}
+    }
+  });
+
+  let htmlTop=`
+  <div class="card-grid-3">
+    <div class="card-total">
+      <p>Penjualan Bulan</p>
+      <div class="angka">Rp ${totalBulan.toLocaleString('id-ID')}</div>
+      <p style="margin-top:6px">Profit Bulan: <b>Rp ${profitBulan.toLocaleString('id-ID')}</b></p>
+    </div>
+    <div class="card-total">
+      <p>Penjualan Tunai</p>
+      <div class="angka">Rp ${totalTunai.toLocaleString('id-ID')}</div>
+      <p style="margin-top:6px">Profit Penjualan Tunai: <b>Rp ${profitTunai.toLocaleString('id-ID')}</b></p>
+    </div>
+    <div class="card-total">
+      <p>Penjualan Tempo</p>
+      <div class="angka">Rp ${totalTempo.toLocaleString('id-ID')}</div>
+      <p style="margin-top:6px">Profit Penjualan Tempo/Kredit: <b>Rp ${profitTempo.toLocaleString('id-ID')}</b></p>
+    </div>
+  </div>`;
+
+  let htmlSales='<div class="card-sales-grid">';
+  salesList.forEach(s=>{
+    htmlSales+=`
+    <div class="card-sales">
+      <h4>${s}</h4>
+      <div class="row"><b>Penjualan</b></div>
+      <div class="row">Cash : Rp ${rekap[s].cash.toLocaleString('id-ID')}</div>
+      <div class="row">Tempo : Rp ${rekap[s].tempo.toLocaleString('id-ID')}</div>
+      <div class="section"><b>Profit</b></div>
+      <div class="row">Cash : Rp ${rekap[s].cashProfit.toLocaleString('id-ID')}</div>
+      <div class="row">Tempo : Rp ${rekap[s].tempoProfit.toLocaleString('id-ID')}</div>
+    </div>`;
+  });
+  htmlSales+='</div>';
+
+  let htmlTable='<div class="table-scroll"><h4 style="margin-bottom:12px;color:#004aad">RINCIAN PENJUALAN PER SALES</h4><table><thead><tr><th>SALES</th><th style="text-align:right">PENJUALAN CASH</th><th style="text-align:right">PROFIT CASH</th><th style="text-align:right">PENJUALAN TEMPO</th><th style="text-align:right">PROFIT TEMPO</th><th style="text-align:right">TOTAL PENJUALAN</th><th style="text-align:right">TOTAL PROFIT</th></tr></thead><tbody>';
+
+  salesList.forEach(s=>{
+    let totalJual=rekap[s].cash+rekap[s].tempo;
+    let totalProf=rekap[s].cashProfit+rekap[s].tempoProfit;
+    htmlTable+=`<tr>
+      <td><b>${s}</b></td>
+      <td style="text-align:right">Rp ${rekap[s].cash.toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${rekap[s].cashProfit.toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${rekap[s].tempo.toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${rekap[s].tempoProfit.toLocaleString('id-ID')}</td>
+      <td style="text-align:right"><b>Rp ${totalJual.toLocaleString('id-ID')}</b></td>
+      <td style="text-align:right"><b>Rp ${totalProf.toLocaleString('id-ID')}</b></td>
+    </tr>`;
+  });
+  htmlTable+='</tbody></table></div>';
+
+  document.getElementById('ringkasanContent').innerHTML=htmlTop+htmlSales+htmlTable;
+}
+
+function uploadHutang(input){
+  let file=input.files[0];if(!file)return;
+  let reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
+      let ws=wb.Sheets[wb.SheetNames[0]];
+      let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+      let headers=rows[0].map(h=>String(h).trim());
+      let idxTgl=headers.findIndex(h=>h.toLowerCase().includes('tanggal')||h.toLowerCase().includes('tgl'));
+      let idxSup=headers.findIndex(h=>h.toLowerCase().includes('supplier')||h.toLowerCase().includes('suplier'));
+      let idxNom=headers.findIndex(h=>h.toLowerCase().includes('nominal')||h.toLowerCase().includes('hutang'));
+      let idxBayar=headers.findIndex(h=>h.toLowerCase().includes('bayar')||h.toLowerCase().includes('terbayar'));
+
+      dataHutang=rows.slice(1).filter(r=>r[idxSup]).map((r,i)=>({
+        id:i+Date.now(),
+        tanggal:formatDate(r[idxTgl]),
+        supplier:r[idxSup],
+        nominal:parseInt(String(r[idxNom]||'0').replace(/[^0-9]/g,''))||0,
+        bayar:parseInt(String(r[idxBayar]||'0').replace(/[^0-9]/g,''))||0
+      }));
+      localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+      showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');
+      renderHutang();
+    }catch(err){showNotification('Gagal baca file: '+err.message,'error');}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderHutang(){
+  if(!document.getElementById('hutangTableScroll'))return;
+  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
+
+  let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
+
+  dataHutang.forEach(r=>{
+    let nom=r.nominal||0,bayar=r.bayar||0;
+    totalBayar+=bayar;
+    totalBelumBayar+=(nom-bayar);
+    tagihanBulanIni+=nom;
+  });
+
+  document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
+  document.getElementById('totalTagihanBulanDepan').innerText='Rp 0';
+  document.getElementById('totalHutangTerbayar').innerText='Rp '+totalBayar.toLocaleString('id-ID');
+  document.getElementById('totalHutangBelumBayar').innerText='Rp '+totalBelumBayar.toLocaleString('id-ID');
+
+  if(!dataHutang.length){
+    document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';
+    return;
+  }
+
+  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
+  dataHutang.forEach(r=>{
+    let status=r.bayar>=r.nominal?'Lunas':'Belum Lunas';
+    html+=`<tr>
+      <td>${r.tanggal}</td>
+      <td><b>${r.supplier}</b></td>
+      <td style="text-align:right">Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
+      <td><span class="badge ${status=='Lunas'?'badge-success':'badge-warning'}">${status}</span></td>
+      <td>
+        <button class="btn-aksi btn-edit" onclick="editHutang(${r.id})">✏️</button>
+        <button class="btn-aksi" style="background:#dc3545;color:white" onclick="hapusHutang(${r.id})">🗑️</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('hutangTableScroll').innerHTML=html+'</tbody></table>';
+}
+
+function editHutang(id){
+  let item=dataHutang.find(x=>x.id===id);
+  if(!item)return;
+  let bayarBaru=prompt('Edit Sudah Bayar untuk '+item.supplier, item.bayar);
+  if(bayarBaru===null)return;
+  bayarBaru=parseInt(String(bayarBaru).replace(/[^0-9]/g,''))||0;
+  if(bayarBaru>item.nominal){alert('Sudah Bayar tidak boleh > Nominal');return;}
+  item.bayar=bayarBaru;
+  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+  renderHutang();
+  showNotification('Data berhasil diupdate','success');
+}
+
+function hapusHutang(id){
+  if(!confirm('Yakin hapus data ini?'))return;
+  dataHutang=dataHutang.filter(x=>x.id!==id);
+  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
+  renderHutang();
+  showNotification('Data berhasil dihapus','success');
+}
+
+function backupData(){let backup={penjualan:dataGlobal,keuangan:dataStore,piutang:dataPiutang,hutang:dataHutang,tanggal:new Date().toISOString()};let blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a
