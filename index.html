@@ -33,24 +33,19 @@ table{width:100%;border-collapse:collapse;min-width:600px}
 th{background:#004aad;color:white;padding:11px 12px;text-align:left;font-weight:600;font-size:13px}
 td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px}
 tr:hover td{background:#f8f9fa}
+tr.total-row td{background:#e6f0ff;font-weight:700;color:#004aad;border-top:2px solid #004aad}
 input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;background:#fafafa;width:100%;cursor:pointer}
 .btn-aksi{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:5px}
 .btn-simpan{background:#28a745;color:white}
 .btn-edit{background:#ffc107;color:#333}
-.badge{padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
-.badge-success{background:#d4edda;color:#155724}
-.badge-warning{background:#fff3cd;color:#856404}
 #notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .notification-success{background:#28a745}
 .notification-error{background:#dc3545}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-bottom:20px}
-.card{padding:20px;border-radius:8px;color:white}
-.card-blue{background:linear-gradient(135deg,#004aad,#0066cc)}
-.card-yellow{background:linear-gradient(135deg,#ffc107,#ffca2c);color:#333}
-.card-red{background:linear-gradient(135deg,#dc3545,#c82333)}
-.card-green{background:linear-gradient(135deg,#28a745,#218838)}
-.card h4{font-size:13px;font-weight:500;margin-bottom:8px;opacity:0.9}
-.card p{font-size:24px;font-weight:700}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:15px;margin-bottom:20px}
+.card-sales{padding:20px;border-radius:8px;background:white;border-left:5px solid #004aad;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.card-sales h4{font-size:14px;color:#004aad;margin-bottom:10px;font-weight:600}
+.card-sales.angka{font-size:22px;font-weight:700;color:#333;margin-bottom:5px}
+.card-sales.sub{font-size:12px;color:#666}
 @media(max-width:768px){
 .container{flex-direction:column}
 .sidebar{width:100%;display:flex;overflow-x:auto;padding:10px;border-bottom:1px solid #e0e0e0}
@@ -169,7 +164,7 @@ let pages={
     <div class="table-wrap" style="margin-bottom:15px;padding:15px 20px"><h3 style="margin:0 0 15px 0">Hutang Dagang</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:13px;line-height:2"><div><b>Total Tagihan Bulan ini :</b></div><div><b><span id="totalTagihanBulanIni">Rp 0</span></b></div><div><b>Total Tagihan Bulan Depan :</b></div><div><b><span id="totalTagihanBulanDepan">Rp 0</span></b></div><div><b>Terbayar :</b></div><div><b><span id="totalHutangTerbayar">Rp 0</span></b></div><div><b>Belum Terbayar :</b></div><div><b><span id="totalHutangBelumBayar">Rp 0</span></b></div></div></div>
     <div class="table-wrap"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px"><h3 style="margin:0">Daftar Hutang Supplier</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><input type="file" id="hutangFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="uploadHutang(this)"><button class="btn-aksi btn-simpan" onclick="document.getElementById('hutangFile').click()">Upload Hutang</button><button class="btn-aksi btn-edit" onclick="renderHutang()">Reset Filter</button></div></div><div class="table-scroll" id="hutangTableScroll"><p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p></div></div>`,
   penjualan:`<div class="table-wrap"><h3>Data Penjualan</h3><div class="table-scroll" id="penjualanTable"></div></div>`,
-  ringkasan:`<div class="table-wrap"><h3>Ringkasan Keuangan</h3><div id="ringkasanContent"></div></div>`,
+  ringkasan:`<div class="table-wrap"><h3>Ringkasan Penjualan Per Sales</h3><div id="ringkasanContent"></div></div>`,
   data:`<div class="table-wrap"><h3>Data Tabel</h3><div class="table-scroll" id="dataTable"></div></div>`,
   piutang:`<div class="table-wrap"><h3>Piutang Customer</h3><div class="table-scroll" id="piutangTable"></div></div>`,
   stok:`<div class="table-wrap"><h3>Stok Barang</h3><p style="color:#666">Fitur dalam pengembangan</p></div>`,
@@ -254,55 +249,66 @@ function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
 function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
 
-// RINGKASAN UPGRADE - DASHBOARD LENGKAP
+// RINGKASAN PER SALES DENGAN CARD RAJU HAFID JOSSY
 function renderRingkasan(){
   dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
-  dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');
-  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-  ['saldoAwal','pemasukan','pengeluaran','saldoAkhir'].forEach(k=>dataStore[k]=JSON.parse(localStorage.getItem('keuangan_'+k)||'[]'));
+  if(!dataGlobal.length){
+    document.getElementById('ringkasanContent').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';
+    return;
+  }
 
-  let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0);
-  let totalPiutang=sumColumn(dataPiutang);
-  let totalHutangBelumBayar=dataHutang.reduce((s,r)=>s+((r.nominal||0)-(r.bayar||0)),0);
-  let totalAwal=sumColumn(dataStore.saldoAwal);
-  let totalMasuk=sumColumn(dataStore.pemasukan);
-  let totalKeluar=sumColumn(dataStore.pengeluaran);
-  let kasAkhir=totalAwal+totalMasuk-totalKeluar;
-  let labaKotor=totalPenjualan-totalKeluar;
+  // Index kolom - SESUAIKAN KALAU BEDA
+  // 0=Tanggal, 1=Customer, 2=Barang, 3=Sales, 6=Qty, 8=Total/Nominal, 9=Profit
+  let targetSales=['RAJU','HAFID','JOSSY'];
+  let rekap={};
+  targetSales.forEach(s=>rekap[s]={qty:0,nominal:0,profit:0});
+  let totalQty=0,totalNominal=0,totalProfit=0;
 
-  document.getElementById('ringkasanContent').innerHTML=`
-    <div class="card-grid">
-      <div class="card card-blue">
-        <h4>Total Penjualan</h4>
-        <p>Rp ${totalPenjualan.toLocaleString('id-ID')}</p>
-      </div>
-      <div class="card card-yellow">
-        <h4>Total Piutang</h4>
-        <p>Rp ${totalPiutang.toLocaleString('id-ID')}</p>
-      </div>
-      <div class="card card-red">
-        <h4>Total Hutang Belum Bayar</h4>
-        <p>Rp ${totalHutangBelumBayar.toLocaleString('id-ID')}</p>
-      </div>
-      <div class="card card-green">
-        <h4>Kas Akhir</h4>
-        <p>Rp ${kasAkhir.toLocaleString('id-ID')}</p>
-      </div>
-      <div class="card card-blue">
-        <h4>Laba Kotor</h4>
-        <p>Rp ${labaKotor.toLocaleString('id-ID')}</p>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <h4>Detail Keuangan</h4>
-      <table>
-        <tr><td>Saldo Awal</td><td style="text-align:right"><b>Rp ${totalAwal.toLocaleString('id-ID')}</b></td></tr>
-        <tr><td>Total Pemasukan</td><td style="text-align:right"><b>Rp ${totalMasuk.toLocaleString('id-ID')}</b></td></tr>
-        <tr><td>Total Pengeluaran</td><td style="text-align:right"><b>Rp ${totalKeluar.toLocaleString('id-ID')}</b></td></tr>
-        <tr style="border-top:2px solid #004aad"><td>Kas Akhir</td><td style="text-align:right"><b>Rp ${kasAkhir.toLocaleString('id-ID')}</b></td></tr>
-      </table>
-    </div>
-  `;
+  dataGlobal.forEach(r=>{
+    let sales=String(r[3]||'').toUpperCase().trim();
+    let qty=parseInt(r[6])||0;
+    let nominal=parseInt(r[8])||0;
+    let profit=parseInt(r[9])||0;
+
+    if(targetSales.includes(sales)){
+      rekap[sales].qty+=qty;
+      rekap[sales].nominal+=nominal;
+      rekap[sales].profit+=profit;
+    }
+    totalQty+=qty;
+    totalNominal+=nominal;
+    totalProfit+=profit;
+  });
+
+  // Card per sales
+  let cardHtml='<div class="card-grid">';
+  targetSales.forEach(s=>{
+    cardHtml+=`<div class="card-sales">
+      <h4>${s}</h4>
+      <div class="angka">Rp ${rekap[s].nominal.toLocaleString('id-ID')}</div>
+      <div class="sub">Qty: ${rekap[s].qty.toLocaleString('id-ID')} | Profit: Rp ${rekap[s].profit.toLocaleString('id-ID')}</div>
+    </div>`;
+  });
+  cardHtml+='</div>';
+
+  // Tabel detail
+  let tableHtml='<table><thead><tr><th>Sales</th><th style="text-align:right">Qty</th><th style="text-align:right">Nominal</th><th style="text-align:right">Profit</th></tr></thead><tbody>';
+  targetSales.forEach(s=>{
+    tableHtml+=`<tr>
+      <td><b>${s}</b></td>
+      <td style="text-align:right">${rekap[s].qty.toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${rekap[s].nominal.toLocaleString('id-ID')}</td>
+      <td style="text-align:right">Rp ${rekap[s].profit.toLocaleString('id-ID')}</td>
+    </tr>`;
+  });
+  tableHtml+=`<tr class="total-row">
+    <td>TOTAL</td>
+    <td style="text-align:right">${totalQty.toLocaleString('id-ID')}</td>
+    <td style="text-align:right">Rp ${totalNominal.toLocaleString('id-ID')}</td>
+    <td style="text-align:right">Rp ${totalProfit.toLocaleString('id-ID')}</td>
+  </tr></tbody></table>`;
+
+  document.getElementById('ringkasanContent').innerHTML=cardHtml+tableHtml;
 }
 
 function uploadHutang(input){
