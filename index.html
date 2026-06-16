@@ -45,6 +45,9 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
 .btn-aksi{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:5px}
 .btn-simpan{background:#28a745;color:white}
 .btn-edit{background:#ffc107;color:#333}
+.badge{padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600}
+.badge-success{background:#d4edda;color:#155724}
+.badge-warning{background:#fff3cd;color:#856404}
 #notification{position:fixed;top:70px;right:25px;padding:12px 20px;border-radius:6px;color:white;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
 .notification-success{background:#28a745}
 .notification-error{background:#dc3545}
@@ -99,7 +102,7 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
 let dataStore={saldoAwal:[],pemasukan:[],pengeluaran:[],saldoAkhir:[]};
 let dataGlobal=[];
 let dataPiutang=[];
-let dataHutang=[];
+let dataHutang=JSON.parse(localStorage.getItem('hutang_data') || '[]');
 
 function showNotification(msg,type='success'){
   let notif=document.getElementById('notification');
@@ -130,12 +133,13 @@ if(localStorage.getItem('gajahmas_login')==='1'){
   document.getElementById('app').style.display='block';
 }
 
-// Fungsi konversi tanggal Excel serial ke DD/MM/YYYY
+// Fungsi konversi tanggal universal: Excel serial, 6/2/26, 02/06/2026
 function formatDate(val){
   if(!val||val==='-')return '-';
   let str=String(val).trim();
   let num=parseInt(str);
-  // Kalau angka Excel serial
+
+  // Excel serial date
   if(!isNaN(num)&&num>40000&&num<60000){
     let date=new Date(Math.round((num-25569)*86400*1000));
     let d=String(date.getDate()).padStart(2,'0');
@@ -143,8 +147,17 @@ function formatDate(val){
     let y=date.getFullYear();
     return `${d}/${m}/${y}`;
   }
-  // Kalau sudah string tanggal
-  if(str.includes('/')||str.includes('-'))return str;
+
+  // Format 6/2/26 atau 6/2/2026
+  if(str.includes('/')){
+    let parts=str.split('/');
+    if(parts.length===3){
+      let dd=String(parts[0]).padStart(2,'0');
+      let mm=String(parts[1]).padStart(2,'0');
+      let yy=parts[2].length===2?'20'+parts[2]:parts[2];
+      return `${dd}/${mm}/${yy}`;
+    }
+  }
   return str;
 }
 
@@ -175,14 +188,14 @@ let pages={
 
 function show(id){
   document.querySelectorAll('.sidebar button').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
+  if(event && event.target) event.target.classList.add('active');
   document.getElementById('content').innerHTML=pages[id]||'<p>Halaman tidak ditemukan</p>';
   if(id==='kas')renderKeuangan();
   if(id==='penjualan')renderPenjualan();
   if(id==='ringkasan')renderRingkasan();
   if(id==='data')renderData();
   if(id==='piutang'){dataPiutang=JSON.parse(localStorage.getItem('piutang_data')||'[]');renderPiutang();}
-  if(id.includes('hutang')){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
+  if(id==='hutang'){dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');renderHutang();}
 }
 
 function makeTable(data){
@@ -219,7 +232,7 @@ function uploadFileKeu(tipe){
       let parsed=[];
       if(file.name.endsWith('.csv')){let lines=ev.target.result.split('\n');let headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));for(let i=1;i<lines.length;i++){if(lines[i].trim()){let values=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));let obj={};headers.forEach((h,idx)=>obj[h]=values[idx]||'');parsed.push(obj);}}}
       else{let wb=XLSX.read(ev.target.result,{type:'binary'});parsed=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});}
-      dataStore[tipe]=parsed; // FIX: update per tipe
+      dataStore[tipe]=parsed;
       localStorage.setItem('keuangan_'+tipe,JSON.stringify(parsed));
       showNotification('Upload '+tipe+' berhasil','success');
       renderKeuangan();
@@ -245,28 +258,8 @@ function handleFile(e){
 function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');if(!dataGlobal.length){document.getElementById('penjualanTable').innerHTML='<p style="color:#666">Belum ada data penjualan</p>';return;}document.getElementById('penjualanTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9],Metode:r[10]})));}
 function renderRingkasan(){let totalPenjualan=dataGlobal.reduce((s,r)=>s+(parseInt(r[9])||0),0),totalPiutang=sumColumn(JSON.parse(localStorage.getItem('piutang_data')||'[]'));document.getElementById('ringkasanContent').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px"><div style="padding:20px;background:#e6f0ff;border-radius:8px"><h4>Total Penjualan</h4><p style="font-size:22px;font-weight:700;color:#004aad">Rp ${totalPenjualan.toLocaleString('id-ID')}</p></div><div style="padding:20px;background:#fff3cd;border-radius:8px"><h4>Total Piutang</h4><p style="font-size:22px;font-weight:700;color:#856404">Rp ${totalPiutang.toLocaleString('id-ID')}</p></div></div>`;}
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
-function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);
-                        }
+function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
 
-  function formatDate(val){
-  if(!val) return "";
-  let d = new Date(val);
-  if(!isNaN(d)){
-    let dd = String(d.getDate()).padStart(2,'0');
-    let mm = String(d.getMonth()+1).padStart(2,'0');
-    let yy = d.getFullYear();
-    return dd+'/'+mm+'/'+yy;
-  }
-  // Kalau udah format 6/2/26
-  let parts = String(val).split('/');
-  if(parts.length===3){
-    let dd = parts[0].padStart(2,'0');
-    let mm = parts[1].padStart(2,'0');
-    let yy = parts[2].length===2? '20'+parts[2] : parts[2];
-    return dd+'/'+mm+'/'+yy;
-  }
-  return val;
-}
 function uploadHutang(input){
   let file=input.files[0];if(!file)return;
   let reader=new FileReader();
@@ -329,13 +322,15 @@ function renderHutang(){
     return;
   }
 
-  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th><th>Aksi</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
   dataHutang.forEach(r=>{
+    let status=r.bayar>=r.nominal?'Lunas':'Belum Lunas';
     html+=`<tr>
       <td>${r.tanggal}</td>
       <td><b>${r.supplier}</b></td>
       <td>Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
       <td>Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
+      <td><span class="badge ${status=='Lunas'?'badge-success':'badge-warning'}">${status}</span></td>
       <td>
         <button class="btn-aksi btn-edit" onclick="editHutang(${r.id})">✏️</button>
         <button class="btn-aksi" style="background:#dc3545;color:white" onclick="hapusHutang(${r.id})">🗑️</button>
