@@ -12,7 +12,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 .login-box{background:white;padding:40px 35px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);width:100%;max-width:380px;text-align:center}
 .login-box h1{color:#004aad;margin-bottom:10px;font-size:26px}
 .login-box p{color:#666;margin-bottom:25px;font-size:13px}
-.login-box input{width:100%;padding:12px 15px;margin-bottom:15px;border:2px solid #e0e0e0;border-radius:6px;font-size:14px}
+.login-box input{width:100%;padding:12px 15px;margin-bottom:15px;border:2px solid #e0e0e0;border-radius:6px;font-size:16px;text-align:center;letter-spacing:3px}
 .login-box input:focus{outline:none;border-color:#004aad}
 .login-box button{width:100%;padding:12px;background:#004aad;color:white;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer}
 .login-box button:hover{background:#003580}
@@ -68,10 +68,10 @@ input[type="file"]{padding:8px;border:2px dashed #ddd;border-radius:6px;backgrou
 <div id="loginPage">
   <div class="login-box">
     <h1>Gajah Mas</h1>
-    <p>Private Data System</p>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <p>Masukkan PIN untuk masuk</p>
+    <input type="password" id="pin" placeholder="••••" maxlength="6" inputmode="numeric">
+    <button onclick="login()">Masuk</button>
+    <p style="margin-top:15px;font-size:11px;color:#999">PIN default: 1234</p>
   </div>
 </div>
 
@@ -108,6 +108,9 @@ let dataGlobal=[];
 let dataPiutang=[];
 let dataHutang=JSON.parse(localStorage.getItem('hutang_data') || '[]');
 
+// GANTI PIN DISINI MAS
+const PIN_BENAR = '1234';
+
 function showNotification(msg,type='success'){
   let notif=document.getElementById('notification');
   notif.className='notification-'+type;
@@ -117,15 +120,28 @@ function showNotification(msg,type='success'){
 }
 
 function login(){
-  let u=document.getElementById('username').value.trim();
-  let p=document.getElementById('password').value.trim();
-  if(u==='GajahMas'&&p==='AdminGajahMas'){
+  let pin=document.getElementById('pin').value.trim();
+  if(pin===PIN_BENAR){
     localStorage.setItem('gajahmas_login','1');
     document.getElementById('loginPage').style.display='none';
     document.getElementById('app').style.display='block';
     show('kas');
-  }else showNotification('Username atau password salah','error');
+  }else{
+    showNotification('PIN salah','error');
+    document.getElementById('pin').value='';
+    document.getElementById('pin').focus();
+  }
 }
+
+// Enter untuk login
+document.addEventListener('DOMContentLoaded',()=>{
+  let pinInput=document.getElementById('pin');
+  if(pinInput){
+    pinInput.addEventListener('keypress',e=>{
+      if(e.key==='Enter') login();
+    });
+  }
+});
 
 function logout(){
   localStorage.removeItem('gajahmas_login');
@@ -258,7 +274,7 @@ function renderPenjualan(){dataGlobal=JSON.parse(localStorage.getItem('penjualan
 function renderData(){document.getElementById('dataTable').innerHTML=makeTable(dataGlobal.map(r=>({Tanggal:formatDate(r[0]),Customer:r[1],Barang:r[2],Qty:r[8],Total:r[9]})));}
 function renderPiutang(){if(!document.getElementById('piutangTable'))return;if(!dataPiutang.length){document.getElementById('piutangTable').innerHTML='<p style="color:#666">Belum ada data piutang</p>';return;}document.getElementById('piutangTable').innerHTML=makeTable(dataPiutang);}
 
-// RINGKASAN SESUAI SCREENSHOT MAS
+// RINGKASAN SESUAI SCREENSHOT
 function renderRingkasan(){
   dataGlobal=JSON.parse(localStorage.getItem('penjualan_data')||'[]');
   if(!dataGlobal.length){
@@ -267,7 +283,6 @@ function renderRingkasan(){
   }
 
   // Index kolom - SESUAIKAN KALAU BEDA
-  // 0=Tanggal, 1=Customer, 2=Barang, 3=Sales, 6=Qty, 8=Total, 9=Profit, 10=Metode
   let salesList=['HAFID','JOSSY','RAJU'];
   let rekap={};
   salesList.forEach(s=>rekap[s]={cash:0,cashProfit:0,tempo:0,tempoProfit:0});
@@ -294,7 +309,6 @@ function renderRingkasan(){
     }
   });
 
-  // Card total atas
   let htmlTop=`
   <div class="card-grid-3">
     <div class="card-total">
@@ -304,142 +318,4 @@ function renderRingkasan(){
     </div>
     <div class="card-total">
       <p>Penjualan Tunai</p>
-      <div class="angka">Rp ${totalTunai.toLocaleString('id-ID')}</div>
-      <p style="margin-top:6px">Profit Penjualan Tunai: <b>Rp ${profitTunai.toLocaleString('id-ID')}</b></p>
-    </div>
-    <div class="card-total">
-      <p>Penjualan Tempo</p>
-      <div class="angka">Rp ${totalTempo.toLocaleString('id-ID')}</div>
-      <p style="margin-top:6px">Profit Penjualan Tempo/Kredit: <b>Rp ${profitTempo.toLocaleString('id-ID')}</b></p>
-    </div>
-  </div>`;
-
-  // Card per sales
-  let htmlSales='<div class="card-sales-grid">';
-  salesList.forEach(s=>{
-    htmlSales+=`
-    <div class="card-sales">
-      <h4>${s}</h4>
-      <div class="row"><b>Penjualan</b></div>
-      <div class="row">Cash : Rp ${rekap[s].cash.toLocaleString('id-ID')}</div>
-      <div class="row">Tempo : Rp ${rekap[s].tempo.toLocaleString('id-ID')}</div>
-      <div class="section"><b>Profit</b></div>
-      <div class="row">Cash : Rp ${rekap[s].cashProfit.toLocaleString('id-ID')}</div>
-      <div class="row">Tempo : Rp ${rekap[s].tempoProfit.toLocaleString('id-ID')}</div>
-    </div>`;
-  });
-  htmlSales+='</div>';
-
-  // Tabel rincian
-  let htmlTable='<div class="table-scroll"><h4 style="margin-bottom:12px;color:#004aad">RINCIAN PENJUALAN PER SALES</h4><table><thead><tr><th>SALES</th><th style="text-align:right">PENJUALAN CASH</th><th style="text-align:right">PROFIT CASH</th><th style="text-align:right">PENJUALAN TEMPO</th><th style="text-align:right">PROFIT TEMPO</th><th style="text-align:right">TOTAL PENJUALAN</th><th style="text-align:right">TOTAL PROFIT</th></tr></thead><tbody>';
-
-  salesList.forEach(s=>{
-    let totalJual=rekap[s].cash+rekap[s].tempo;
-    let totalProf=rekap[s].cashProfit+rekap[s].tempoProfit;
-    htmlTable+=`<tr>
-      <td><b>${s}</b></td>
-      <td style="text-align:right">Rp ${rekap[s].cash.toLocaleString('id-ID')}</td>
-      <td style="text-align:right">Rp ${rekap[s].cashProfit.toLocaleString('id-ID')}</td>
-      <td style="text-align:right">Rp ${rekap[s].tempo.toLocaleString('id-ID')}</td>
-      <td style="text-align:right">Rp ${rekap[s].tempoProfit.toLocaleString('id-ID')}</td>
-      <td style="text-align:right"><b>Rp ${totalJual.toLocaleString('id-ID')}</b></td>
-      <td style="text-align:right"><b>Rp ${totalProf.toLocaleString('id-ID')}</b></td>
-    </tr>`;
-  });
-  htmlTable+='</tbody></table></div>';
-
-  document.getElementById('ringkasanContent').innerHTML=htmlTop+htmlSales+htmlTable;
-}
-
-function uploadHutang(input){
-  let file=input.files[0];if(!file)return;
-  let reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      let wb=XLSX.read(e.target.result,{type:'binary',cellDates:true});
-      let ws=wb.Sheets[wb.SheetNames[0]];
-      let rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
-      let headers=rows[0].map(h=>String(h).trim());
-      let idxTgl=headers.findIndex(h=>h.toLowerCase().includes('tanggal')||h.toLowerCase().includes('tgl'));
-      let idxSup=headers.findIndex(h=>h.toLowerCase().includes('supplier')||h.toLowerCase().includes('suplier'));
-      let idxNom=headers.findIndex(h=>h.toLowerCase().includes('nominal')||h.toLowerCase().includes('hutang'));
-      let idxBayar=headers.findIndex(h=>h.toLowerCase().includes('bayar')||h.toLowerCase().includes('terbayar'));
-
-      dataHutang=rows.slice(1).filter(r=>r[idxSup]).map((r,i)=>({
-        id:i+Date.now(),
-        tanggal:formatDate(r[idxTgl]),
-        supplier:r[idxSup],
-        nominal:parseInt(String(r[idxNom]||'0').replace(/[^0-9]/g,''))||0,
-        bayar:parseInt(String(r[idxBayar]||'0').replace(/[^0-9]/g,''))||0
-      }));
-      localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
-      showNotification('Berhasil upload '+dataHutang.length+' data hutang','success');
-      renderHutang();
-    }catch(err){showNotification('Gagal baca file: '+err.message,'error');}
-  };
-  reader.readAsBinaryString(file);
-}
-
-function renderHutang(){
-  if(!document.getElementById('hutangTableScroll'))return;
-  dataHutang=JSON.parse(localStorage.getItem('hutang_data')||'[]');
-
-  let tagihanBulanIni=0,tagihanBulanDepan=0,totalBayar=0,totalBelumBayar=0;
-
-  dataHutang.forEach(r=>{
-    let nom=r.nominal||0,bayar=r.bayar||0;
-    totalBayar+=bayar;
-    totalBelumBayar+=(nom-bayar);
-    tagihanBulanIni+=nom;
-  });
-
-  document.getElementById('totalTagihanBulanIni').innerText='Rp '+tagihanBulanIni.toLocaleString('id-ID');
-  document.getElementById('totalTagihanBulanDepan').innerText='Rp 0';
-  document.getElementById('totalHutangTerbayar').innerText='Rp '+totalBayar.toLocaleString('id-ID');
-  document.getElementById('totalHutangBelumBayar').innerText='Rp '+totalBelumBayar.toLocaleString('id-ID');
-
-  if(!dataHutang.length){
-    document.getElementById('hutangTableScroll').innerHTML='<p style="color:#666;text-align:center;padding:20px 0">Belum ada data hutang. Upload file Excel/CSV hutang supplier.</p>';
-    return;
-  }
-
-  let html='<table><thead><tr><th>Tanggal</th><th>Suplier</th><th>Nominal</th><th>Sudah Bayar</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';
-  dataHutang.forEach(r=>{
-    let status=r.bayar>=r.nominal?'Lunas':'Belum Lunas';
-    html+=`<tr>
-      <td>${r.tanggal}</td>
-      <td><b>${r.supplier}</b></td>
-      <td style="text-align:right">Rp ${(r.nominal||0).toLocaleString('id-ID')}</td>
-      <td style="text-align:right">Rp ${(r.bayar||0).toLocaleString('id-ID')}</td>
-      <td><span class="badge ${status=='Lunas'?'badge-success':'badge-warning'}">${status}</span></td>
-      <td>
-        <button class="btn-aksi btn-edit" onclick="editHutang(${r.id})">✏️</button>
-        <button class="btn-aksi" style="background:#dc3545;color:white" onclick="hapusHutang(${r.id})">🗑️</button>
-      </td>
-    </tr>`;
-  });
-  document.getElementById('hutangTableScroll').innerHTML=html+'</tbody></table>';
-}
-
-function editHutang(id){
-  let item=dataHutang.find(x=>x.id===id);
-  if(!item)return;
-  let bayarBaru=prompt('Edit Sudah Bayar untuk '+item.supplier, item.bayar);
-  if(bayarBaru===null)return;
-  bayarBaru=parseInt(String(bayarBaru).replace(/[^0-9]/g,''))||0;
-  if(bayarBaru>item.nominal){alert('Sudah Bayar tidak boleh > Nominal');return;}
-  item.bayar=bayarBaru;
-  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
-  renderHutang();
-  showNotification('Data berhasil diupdate','success');
-}
-
-function hapusHutang(id){
-  if(!confirm('Yakin hapus data ini?'))return;
-  dataHutang=dataHutang.filter(x=>x.id!==id);
-  localStorage.setItem('hutang_data',JSON.stringify(dataHutang));
-  renderHutang();
-  showNotification('Data berhasil dihapus','success');
-}
-
-function backupData(){let backup={penjualan:dataGlobal,ke
+      <div class="angka">Rp ${totalTunai.toLocaleString('id-ID')
