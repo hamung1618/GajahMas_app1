@@ -704,12 +704,20 @@ function uploadCSV(){
       let rawGlobal = parsed.filter(row => row && row.length > 0 && row[0] !== "");
 
       dataGlobal = rawGlobal.map(row => {
-        let normRow = [];
-        for(let j=0; j<12; j++) {
-          normRow.push(row[j] !== undefined && row[j] !== null ? String(row[j]).trim() : "");
-        }
-        return normRow;
-      });
+  let normRow = [];
+  for(let j=0; j<12; j++) {
+    let val = row[j]!== undefined && row[j]!== null? row[j] : "";
+
+    // Kolom Tanggal = j=1, kita convert dari angka Excel ke tanggal beneran
+    if(j === 1 &&!isNaN(val) && val > 30000){
+      let excelDate = new Date((Number(val) - 25569) * 86400 * 1000);
+      val = excelDate.toISOString().split('T')[0]; // jadi 2026-05-20
+    }
+
+    normRow.push(String(val).trim());
+  }
+  return normRow;
+});
 
       if(dataGlobal.length === 0){
         showNotification('File berhasil dibaca tapi tidak ada data yang valid.', 'error');
@@ -1395,6 +1403,16 @@ function downloadRingkasan(){
 window.onload=function(){
   dataGlobal = JSON.parse(localStorage.getItem('penjualan')||'[]');
   dataPiutang = JSON.parse(localStorage.getItem('piutang_data')||'[]');
+}
+  function formatTanggal(tgl){
+  if(!tgl) return '-';
+  // Kalau angka Excel 46174
+  if(!isNaN(tgl) && tgl > 30000){
+    let excelDate = new Date((tgl - 25569) * 86400 * 1000);
+    return excelDate.toLocaleDateString('id-ID'); // jadi 20/5/2026
+  }
+  // Kalau udah format 2026-05-20
+  return new Date(tgl).toLocaleDateString('id-ID');
 }
 </script>
 </body>
