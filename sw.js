@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gajahmas-pwa-v1';
+const CACHE_NAME = 'gajahmas-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
