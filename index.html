@@ -76,7 +76,7 @@ function renderPenjualan(){
   data.forEach((r,i)=>{
     let subtotal=r.qty*r.harga;
     total+=subtotal;
-    perSales[r.sales]=(perSales[r.sales]||0)+subtotal;
+   tbody.innerHTML+=`<tr><td>${formatTanggal(r.tanggal)}</td><td>${r.sales}</td><td>${r.qty}</td><td>Rp ${r.harga.toLocaleString()}</td><td>Rp ${subtotal.toLocaleString()}</td><td><button onclick="hapusJual(${i})">Hapus</button></td></tr>`;
     tbody.innerHTML+=`<tr><td>${r.tanggal}</td><td>${r.sales}</td><td>${r.qty}</td><td>Rp ${r.harga.toLocaleString()}</td><td>Rp ${subtotal.toLocaleString()}</td><td><button onclick="hapusJual(${i})">Hapus</button></td></tr>`;
   });
   document.getElementById('totalPenjualan').innerText='Total: Rp '+total.toLocaleString();
@@ -118,6 +118,14 @@ function renderRingkasan(){
 }
 
 showPage('ringkasan');
+  function formatTanggal(tgl){
+  if(!tgl) return '-';
+  if(!isNaN(tgl) && tgl > 30000){
+    let excelDate = new Date((tgl - 25569) * 86400 * 1000);
+    return excelDate.toLocaleDateString('id-ID');
+  }
+  return new Date(tgl).toLocaleDateString('id-ID');
+}
 </script>
 </body>
 </html>
